@@ -20,3 +20,4 @@ a = numpy.loadtxt("power-4.csv", delimiter=",")
 numpy.interp(xi, a[:,0], a[:,1])
 ```
 
+http://effbot.org/tkinterbook/
