@@ -16,23 +16,24 @@ https://www.spinics.net/lists/linux-bluetooth/msg66942.html
 Scan BT-LE devices:
 
 ```
-sudo hcitool lescan
-```
-
-Connect to BE-LE device:
-
-```
-sudo gatttool -b <BLE ADDRESS> -I
-connect
+bluetoothctl
+[bluetooth]# connect <BLE ADDRESS>
+[sensor-name]# select-attribute /org/bluez/hci0/dev_D0_AC_A5_BF_B7_52/service0018/char0019
+[sensor-name:/service0018/char0019]# notify on
+[sensor-name:/service0018/char0019]# notify off
+[sensor-name:/service0018/char0019]# disconnect
 ```
 
 Sensor 1: D0:AC:A5:BF:B7:52
     
 
 
+Information about GATT service "Cyclig Speed and Cadence":
+https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.cycling_speed_and_cadence.xml
+
+
 ```
-pip3 install pexpect
-pip3 install "pygatt[GATTTOOL]"
+pip3 install pygatt
 ```
 
 ```
