@@ -20,11 +20,18 @@ class CSCMeasurement():
         :param measurement: The raw bytes provided by the sensor
         :return:
         """
-        data = struct.unpack("<BLHHH", measurement)
-        self.cum_wheel_revs = data[1]
-        self.last_wheel_event_time = data[2]
-        self.cum_crank_revs = data[3]
-        self.last_crank_event_time = data[4]
+        flags = measurement[0]
+        self.wheel_revolution_data_present = bool(flags & (1 << 0))
+        self.crank_revolution_data_present = bool(flags & (1 << 1))
+
+        if self.wheel_revolution_data_present:
+            data = struct.unpack("<BLH", measurement)
+            self.cum_wheel_revs = data[1]
+            self.last_wheel_event_time = data[2]
+        elif self.crank_revolution_data_present:
+            data = struct.unpack("<BHH", measurement)
+            self.cum_crank_revs = data[1]
+            self.last_crank_event_time = data[2]
 
 
 class CSCDelegate(DefaultDelegate):
