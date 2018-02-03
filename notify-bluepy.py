@@ -14,6 +14,7 @@ class CSCDelegate(DefaultDelegate):
 
 csc_service_uuid = UUID(0x1816)
 csc_char_uuid = UUID(0x2A5B)
+location_char_uuid = UUID(0x2A5D)
 
 p = Peripheral("D0:AC:A5:BF:B7:52", "random")
 p.setDelegate(CSCDelegate(p))
@@ -26,7 +27,31 @@ CSCChar = CSCService.getCharacteristics(csc_char_uuid)[0]
 print("Characteristic: {}".format(CSCChar))
 
 hCSCChar = CSCChar.getHandle()
-print("Handle: {}".format(hCSCChar))
+print("CSC Handle: {}".format(hCSCChar))
+
+LocationChar = CSCService.getCharacteristics(location_char_uuid)[0]
+hLocationChar = LocationChar.getHandle()
+print("Location Handle: {}".format(hLocationChar))
+
+locationList = ["Other",
+                "Top of shoe",
+                "In shoe",
+                "Hip",
+                "Front Wheel",
+                "Left Crank",
+                "Right Crank",
+                "Left Pedal",
+                "Right Pedal",
+                "Front Hub",
+                "Rear Dropout",
+                "Chainstay",
+                "Rear Wheel",
+                "Rear Hub",
+                "Chest",
+                "Spider",
+                "Chain Ring"]
+location = p.readCharacteristic(hLocationChar)
+print("Location: {}".format(locationList[int.from_bytes(location, "little")]))
 
 hCCC = []
 
