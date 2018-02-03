@@ -109,7 +109,7 @@ pip3 download gattlib
 tar xvzf ./gattlib-0.20150805.tar.gz
 cd gattlib-0.20150805/
 sed -ie 's/boost_python-py34/boost_python-py35/' setup.py
-pip3 install .
+sudo pip3 install .
 ```
 
 
