@@ -110,8 +110,15 @@ tar xvzf ./gattlib-0.20150805.tar.gz
 cd gattlib-0.20150805/
 sed -ie 's/boost_python-py34/boost_python-py35/' setup.py
 sudo pip3 install .
+sudo apt-get install bluetooth
+sudo apt-get install pi-bluetooth
+sudo reboot now
+sudo apt-get install bluez
+sudo apt-get install libglib2.0-dev
+sudo pip3 install bluepy
 ```
 
+https://github.com/rlangoy/bluepy_examples_nRF51822_mbed
 
 
 ```
