@@ -1,18 +1,19 @@
 from bluepy.btle import UUID, Peripheral, DefaultDelegate
 import struct
+import collections
 
 
-class CSCMeasurement():
+class CSCMeasurement:
     """
     Defines the fields of a CSC measurement
     """
     def __init__(self):
         self.wheel_revolution_data_present = False
         self.crank_revolution_data_present = False
-        self.cum_wheel_revs = 0
-        self.last_wheel_event_time = 0.
-        self.cum_crank_revs = 0
-        self.last_crank_event_time = 0.
+        self.wheel_revs = 0
+        self.wheel_event_time = 0
+        self.crank_revs = 0
+        self.crank_event_time = 0
 
     def from_bytes(self, measurement: bytes) -> None:
         """
@@ -26,28 +27,76 @@ class CSCMeasurement():
 
         if self.wheel_revolution_data_present:
             data = struct.unpack("<BLH", measurement)
-            self.cum_wheel_revs = data[1]
-            self.last_wheel_event_time = data[2]
+            self.wheel_revs = data[1]
+            self.wheel_event_time = data[2]
         elif self.crank_revolution_data_present:
             data = struct.unpack("<BHH", measurement)
-            self.cum_crank_revs = data[1]
-            self.last_crank_event_time = data[2]
+            self.crank_revs = data[1]
+            self.crank_event_time = data[2]
+
+    def __eq__(self, other) -> bool:
+        """Overrides the default implementation"""
+        if isinstance(self, other.__class__):
+            return self.__dict__ == other.__dict__
+        return False
+
+    def __ne__(self, other) -> bool:
+        """Overrids the default implementation"""
+        return not self.__eq__(other)
+
+
+def meas_difference(t1: int, t2: int, bits: int) -> float:
+    """
+    Determines the difference between two measurements
+    :param t1: The first measurement
+    :param t2: The second measurement
+    :param bits: The number of bits for the measurement (when it wraps around to zero)
+    :return: The difference between the two
+    """
+    if t2 < t1:
+        # It wrapped around 2**bits
+        return ((1 << bits) - 1) - t1 + t2
+    return t2 - t1
 
 
 class CSCDelegate(DefaultDelegate):
     def __init__(self, params):
         DefaultDelegate.__init__(self)
+        self._prev_meas = collections.deque(maxlen=4)
+        self._last_measurement = None
 
     def handleNotification(self, cHandle, data):
         meas = CSCMeasurement()
         meas.from_bytes(data)
         print("WR: {} LWT: {} CR: {} LCT: {} Handle: {}".format(
-            meas.cum_wheel_revs,
-            meas.last_wheel_event_time,
-            meas.cum_crank_revs,
-            meas.last_crank_event_time,
+            meas.wheel_revs,
+            meas.wheel_event_time,
+            meas.crank_revs,
+            meas.crank_event_time,
             cHandle
         ))
+        if meas != self._last_measurement:
+            meas_diff= CSCMeasurement()
+            meas_diff.crank_revolution_data_present = meas.crank_revolution_data_present
+            meas_diff.wheel_revolution_data_present = meas.wheel_revolution_data_present
+            meas_diff.wheel_revs = meas_difference(meas.wheel_revs, self._last_measurement.wheel_revs, 32)
+            meas_diff.crank_revs = meas_difference(meas.crank_revs, self._last_measurement.crank_revs, 16)
+            meas_diff.wheel_event_time = meas_difference(meas.wheel_event_time,
+                                                         self._last_measurement.wheel_event_time,
+                                                         16)
+            meas_diff.crank_event_time = meas_difference(meas.crank_event_time,
+                                                         self._last_measurement.wheel_event_time,
+                                                         16)
+            self._prev_meas.append(meas)
+        self._last_measurement = meas
+
+        if len(self._prev_meas) == self._prev_meas.maxlen:
+            avg = 0.
+            if meas.wheel_revolution_data_present:
+                avg = sum([m.wheel_revs / m.wheel_event_time for m in self._prev_meas]) / len(self._prev_meas)
+            if meas.crank_revolution_data_present:
+                avg = sum([m.crank_revs / m.crank_event_time for m in self._prev_meas]) / len(self._prev_meas)
+            print("...Average speed: {} revs/s".format(avg))
 
 
 csc_service_uuid = UUID(0x1816)
