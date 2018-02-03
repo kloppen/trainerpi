@@ -29,7 +29,7 @@ class CSCSensor:
         """
         self.peripheral = Peripheral(address, "random")
         self.peripheral.setDelegate(CSCDelegate(self.peripheral))  # TODO: Should allow user to set this
-        self.cscService = p.getServiceByUUID(csc_service_uuid)
+        self.cscService = self.peripheral.getServiceByUUID(csc_service_uuid)
         self.cscCharacteristic = self.cscService.getCharacteristics(csc_char_uuid)[0]
         self.cscCharacteristicHandle = self.cscCharacteristic.getHandle()
 
