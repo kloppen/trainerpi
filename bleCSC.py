@@ -67,7 +67,7 @@ class CSCSensor:
         :return: None
         """
         hccc = 0
-        for descriptor in p.getDescriptors(self.cscCharacteristicHandle):
+        for descriptor in self.peripheral.getDescriptors(self.cscCharacteristicHandle):
             if descriptor.uuid == 0x2902:
                 hccc = descriptor.handle
                 break
