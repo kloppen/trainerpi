@@ -75,8 +75,8 @@ class CSCDelegate(DefaultDelegate):
             meas.crank_event_time,
             cHandle
         ))
-        if meas != self._last_measurement:
-            meas_diff= CSCMeasurement()
+        if meas != self._last_measurement and self._last_measurement is not None:
+            meas_diff = CSCMeasurement()
             meas_diff.crank_revolution_data_present = meas.crank_revolution_data_present
             meas_diff.wheel_revolution_data_present = meas.wheel_revolution_data_present
             meas_diff.wheel_revs = meas_difference(meas.wheel_revs, self._last_measurement.wheel_revs, 32)

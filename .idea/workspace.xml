@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="d862b600-6116-4307-8ca8-99876a09462f" name="Default" comment="">
+    <list default="true" id="d862b600-6116-4307-8ca8-99876a09462f" name="Default" comment="Added check for NO">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change beforePath="$PROJECT_DIR$/bleCSC.py" afterPath="$PROJECT_DIR$/bleCSC.py" />
     </list>
@@ -52,8 +52,8 @@
       <file leaf-file-name="bleCSC.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/bleCSC.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="308">
-              <caret line="34" column="0" lean-forward="false" selection-start-line="34" selection-start-column="0" selection-end-line="34" selection-end-column="0" />
+            <state relative-caret-position="221">
+              <caret line="76" column="10" lean-forward="true" selection-start-line="76" selection-start-column="10" selection-end-line="76" selection-end-column="10" />
               <folding>
                 <element signature="e#0#57#0" expanded="true" />
               </folding>
@@ -344,7 +344,28 @@
       <option name="project" value="LOCAL" />
       <updated>1517695086219</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="Created CSCMeasurement class">
+      <created>1517696213457</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1517696213458</updated>
+    </task>
+    <task id="LOCAL-00007" summary="Updated measurement parsing">
+      <created>1517697430489</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1517697430489</updated>
+    </task>
+    <task id="LOCAL-00008" summary="Added speed calculation">
+      <created>1517699996150</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1517699996150</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="ToolWindowManager">
@@ -384,7 +405,10 @@
     <MESSAGE value="Moved basic functionality from notify-bluepy into classes" />
     <MESSAGE value="Corrected type" />
     <MESSAGE value="Turned on notifications" />
-    <option name="LAST_COMMIT_MESSAGE" value="Turned on notifications" />
+    <MESSAGE value="Created CSCMeasurement class" />
+    <MESSAGE value="Updated measurement parsing" />
+    <MESSAGE value="Added speed calculation" />
+    <option name="LAST_COMMIT_MESSAGE" value="Added speed calculation" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager />
@@ -572,8 +596,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/bleCSC.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="308">
-          <caret line="34" column="0" lean-forward="false" selection-start-line="34" selection-start-column="0" selection-end-line="34" selection-end-column="0" />
+        <state relative-caret-position="221">
+          <caret line="76" column="10" lean-forward="true" selection-start-line="76" selection-start-column="10" selection-end-line="76" selection-end-column="10" />
           <folding>
             <element signature="e#0#57#0" expanded="true" />
           </folding>
