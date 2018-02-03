@@ -2,14 +2,45 @@ from bluepy.btle import UUID, Peripheral, DefaultDelegate
 import struct
 
 
+class CSCMeasurement():
+    """
+    Defines the fields of a CSC measurement
+    """
+    def __init__(self):
+        self.wheel_revolution_data_present = False
+        self.crank_revolution_data_present = False
+        self.cum_wheel_revs = 0
+        self.last_wheel_event_time = 0.
+        self.cum_crank_revs = 0
+        self.last_crank_event_time = 0.
+
+    def from_bytes(self, measurement: bytes) -> None:
+        """
+        Parses the raw bytes that the sensor provides
+        :param measurement: The raw bytes provided by the sensor
+        :return:
+        """
+        data = struct.unpack("<BLHHH", measurement)
+        self.cum_wheel_revs = data[1]
+        self.last_wheel_event_time = data[2]
+        self.cum_crank_revs = data[3]
+        self.last_crank_event_time = data[4]
+
+
 class CSCDelegate(DefaultDelegate):
     def __init__(self, params):
         DefaultDelegate.__init__(self)
-        print("Initializing CSCDelegate")
 
     def handleNotification(self, cHandle, data):
-        print("Notification from handle: {} Value: {}".format(
-            cHandle, data))
+        meas = CSCMeasurement()
+        meas.from_bytes(data)
+        print("WR: {} LWT: {} CR: {} LCT: {} Handle: {}".format(
+            meas.cum_wheel_revs,
+            meas.last_wheel_event_time,
+            meas.cum_crank_revs,
+            meas.last_crank_event_time,
+            cHandle
+        ))
 
 
 csc_service_uuid = UUID(0x1816)

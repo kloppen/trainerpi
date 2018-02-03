@@ -3,7 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="d862b600-6116-4307-8ca8-99876a09462f" name="Default" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change beforePath="$PROJECT_DIR$/trainerpi.py" afterPath="$PROJECT_DIR$/trainerpi.py" />
+      <change beforePath="$PROJECT_DIR$/bleCSC.py" afterPath="$PROJECT_DIR$/bleCSC.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -23,8 +23,8 @@
             <file leaf-file-name="notify-bluepy.py" pinned="false" current-in-tab="true">
               <entry file="file://$PROJECT_DIR$/notify-bluepy.py">
                 <provider selected="true" editor-type-id="text-editor">
-                  <state relative-caret-position="618">
-                    <caret line="68" column="0" lean-forward="false" selection-start-line="68" selection-start-column="0" selection-end-line="80" selection-end-column="0" />
+                  <state relative-caret-position="686">
+                    <caret line="72" column="28" lean-forward="true" selection-start-line="72" selection-start-column="28" selection-end-line="72" selection-end-column="28" />
                     <folding>
                       <element signature="e#0#57#0" expanded="true" />
                     </folding>
@@ -39,7 +39,7 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="trainerpi.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="trainerpi.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/trainerpi.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="136">
@@ -49,11 +49,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="bleCSC.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="bleCSC.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/bleCSC.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="476">
-              <caret line="34" column="0" lean-forward="true" selection-start-line="34" selection-start-column="0" selection-end-line="34" selection-end-column="0" />
+            <state relative-caret-position="308">
+              <caret line="34" column="0" lean-forward="false" selection-start-line="34" selection-start-column="0" selection-end-line="34" selection-end-column="0" />
               <folding>
                 <element signature="e#0#57#0" expanded="true" />
               </folding>
@@ -86,8 +86,8 @@
         <option value="$PROJECT_DIR$/a" />
         <option value="$PROJECT_DIR$/a.json" />
         <option value="$PROJECT_DIR$/README.md" />
-        <option value="$PROJECT_DIR$/bleCSC.py" />
         <option value="$PROJECT_DIR$/trainerpi.py" />
+        <option value="$PROJECT_DIR$/bleCSC.py" />
       </list>
     </option>
   </component>
@@ -161,6 +161,7 @@
           <option name="mySupportsDeletion" value="false" />
           <option name="myCanBeAbsent" value="false" />
           <option name="myId" value="UPDATED" />
+          <PATH vcs="Git" revision="">$PROJECT_DIR$/bleCSC.py</PATH>
         </FILE-GROUP>
         <FILE-GROUP>
           <option name="myUpdateName" value="Created" />
@@ -168,7 +169,6 @@
           <option name="mySupportsDeletion" value="false" />
           <option name="myCanBeAbsent" value="false" />
           <option name="myId" value="CREATED" />
-          <PATH vcs="Git" revision="">$PROJECT_DIR$/notify-bluepy.py</PATH>
         </FILE-GROUP>
         <FILE-GROUP>
           <option name="myUpdateName" value="Deleted" />
@@ -337,7 +337,14 @@
       <option name="project" value="LOCAL" />
       <updated>1517695019688</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="Turned on notifications">
+      <created>1517695086219</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1517695086219</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="ToolWindowManager">
@@ -376,7 +383,8 @@
     <MESSAGE value="Updated readme with some notes" />
     <MESSAGE value="Moved basic functionality from notify-bluepy into classes" />
     <MESSAGE value="Corrected type" />
-    <option name="LAST_COMMIT_MESSAGE" value="Corrected type" />
+    <MESSAGE value="Turned on notifications" />
+    <option name="LAST_COMMIT_MESSAGE" value="Turned on notifications" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager />
@@ -544,10 +552,18 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/trainerpi.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="136">
+          <caret line="8" column="0" lean-forward="true" selection-start-line="8" selection-start-column="0" selection-end-line="8" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/notify-bluepy.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="618">
-          <caret line="68" column="0" lean-forward="false" selection-start-line="68" selection-start-column="0" selection-end-line="80" selection-end-column="0" />
+        <state relative-caret-position="686">
+          <caret line="72" column="28" lean-forward="true" selection-start-line="72" selection-start-column="28" selection-end-line="72" selection-end-column="28" />
           <folding>
             <element signature="e#0#57#0" expanded="true" />
           </folding>
@@ -556,19 +572,11 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/bleCSC.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="476">
-          <caret line="34" column="0" lean-forward="true" selection-start-line="34" selection-start-column="0" selection-end-line="34" selection-end-column="0" />
+        <state relative-caret-position="308">
+          <caret line="34" column="0" lean-forward="false" selection-start-line="34" selection-start-column="0" selection-end-line="34" selection-end-column="0" />
           <folding>
             <element signature="e#0#57#0" expanded="true" />
           </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/trainerpi.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="136">
-          <caret line="8" column="0" lean-forward="true" selection-start-line="8" selection-start-column="0" selection-end-line="8" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
