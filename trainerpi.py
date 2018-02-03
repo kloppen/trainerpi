@@ -5,6 +5,8 @@ sensor = bleCSC.CSCSensor("D0:AC:A5:BF:B7:52")
 location = sensor.get_location()
 print("Location: {}".format(location))
 
+sensor.notifications(True)
+
 print("Entering loop...Press ctrl+c to exit")
 
 while True:
