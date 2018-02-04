@@ -52,7 +52,7 @@ def meas_difference(t1: int, t2: int, bits: int) -> float:
     return t2 - t1
 
 
-AVERAGE_LENGTH = 20
+AVERAGE_LENGTH = 10
 
 
 class CSCDelegate(DefaultDelegate):
