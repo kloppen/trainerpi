@@ -37,17 +37,6 @@ class CSCMeasurement:
             self.crank_revs = data[1]
             self.crank_event_time = data[2]
 
-    # TODO: Remove - not needed
-    def __eq__(self, other) -> bool:
-        """Overrides the default implementation"""
-        if isinstance(self, other.__class__):
-            return self.__dict__ == other.__dict__
-        return False
-
-    def __ne__(self, other) -> bool:
-        """Overrids the default implementation"""
-        return not self.__eq__(other)
-
 
 def meas_difference(t1: int, t2: int, bits: int) -> float:
     """
@@ -67,7 +56,7 @@ AVERAGE_LENGTH = 20
 
 
 class CSCDelegate(DefaultDelegate):
-    def __init__(self, params):
+    def __init__(self):
         DefaultDelegate.__init__(self)
         self._prev_meas = collections.deque(maxlen=AVERAGE_LENGTH)
         self._last_measurement = None
@@ -75,13 +64,6 @@ class CSCDelegate(DefaultDelegate):
     def handleNotification(self, cHandle, data):
         meas = CSCMeasurement()
         meas.from_bytes(data)
-        print("WR: {} LWT: {} CR: {} LCT: {} Handle: {}".format(
-            meas.wheel_revs,
-            meas.wheel_event_time,
-            meas.crank_revs,
-            meas.crank_event_time,
-            cHandle
-        ))
         if self._last_measurement is not None:
             meas_diff = CSCMeasurement()
             meas_diff.crank_revolution_data_present = meas.crank_revolution_data_present
@@ -99,12 +81,22 @@ class CSCDelegate(DefaultDelegate):
         self._last_measurement = meas
 
         if len(self._prev_meas) > 2:
-            avg = 0.
             if meas.wheel_revolution_data_present:
                 avg = sum([m.wheel_revs for m in self._prev_meas]) / sum([m.time for m in self._prev_meas])
+                self.handle_speed_notification(avg, 0.)
             if meas.crank_revolution_data_present:
                 avg = sum([m.crank_revs for m in self._prev_meas]) / sum([m.time for m in self._prev_meas])
-            print("...Average speed: {} revs/s".format(avg))
+                self.handle_speed_notification(0., avg)
+
+    def handle_speed_notification(self, wheel_speed: float, crank_speed: float) -> None:
+        """
+        A method that should be overridden to handle speed notifications.
+
+        :param wheel_speed: The wheel speed (rev/sec)
+        :param crank_speed: The crank speed (rev/sec)
+        :return: None
+        """
+        pass
 
 
 csc_service_uuid = UUID(0x1816)
@@ -117,13 +109,13 @@ class CSCSensor:
     This class defines a cycling speed and cadence sensor
     """
 
-    def __init__(self, address: str):
+    def __init__(self, address: str, delegate):
         """
         Initializes the class
         :param address: A string with the address of the sensor
         """
         self.peripheral = Peripheral(address, "random")
-        self.peripheral.setDelegate(CSCDelegate(self.peripheral))  # TODO: Should allow user to set this
+        self.peripheral.setDelegate(delegate)
         self.cscService = self.peripheral.getServiceByUUID(csc_service_uuid)
         self.cscCharacteristic = self.cscService.getCharacteristics(csc_char_uuid)[0]
         self.cscCharacteristicHandle = self.cscCharacteristic.getHandle()
