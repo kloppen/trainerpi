@@ -1,6 +1,7 @@
 from bluepy.btle import UUID, Peripheral, DefaultDelegate
 import struct
 import collections
+import time
 
 
 class CSCMeasurement:
@@ -14,6 +15,7 @@ class CSCMeasurement:
         self.wheel_event_time = 0
         self.crank_revs = 0
         self.crank_event_time = 0
+        self.time = 0.
 
     def from_bytes(self, measurement: bytes) -> None:
         """
@@ -21,6 +23,7 @@ class CSCMeasurement:
         :param measurement: The raw bytes provided by the sensor
         :return:
         """
+        self.time = time.time()
         flags = measurement[0]
         self.wheel_revolution_data_present = bool(flags & (1 << 0))
         self.crank_revolution_data_present = bool(flags & (1 << 1))
@@ -34,6 +37,7 @@ class CSCMeasurement:
             self.crank_revs = data[1]
             self.crank_event_time = data[2]
 
+    # TODO: Remove - not needed
     def __eq__(self, other) -> bool:
         """Overrides the default implementation"""
         if isinstance(self, other.__class__):
@@ -59,10 +63,13 @@ def meas_difference(t1: int, t2: int, bits: int) -> float:
     return t2 - t1
 
 
+AVERAGE_LENGTH = 20
+
+
 class CSCDelegate(DefaultDelegate):
     def __init__(self, params):
         DefaultDelegate.__init__(self)
-        self._prev_meas = collections.deque(maxlen=4)
+        self._prev_meas = collections.deque(maxlen=AVERAGE_LENGTH)
         self._last_measurement = None
 
     def handleNotification(self, cHandle, data):
@@ -75,7 +82,7 @@ class CSCDelegate(DefaultDelegate):
             meas.crank_event_time,
             cHandle
         ))
-        if meas != self._last_measurement and self._last_measurement is not None:
+        if self._last_measurement is not None:
             meas_diff = CSCMeasurement()
             meas_diff.crank_revolution_data_present = meas.crank_revolution_data_present
             meas_diff.wheel_revolution_data_present = meas.wheel_revolution_data_present
@@ -83,19 +90,20 @@ class CSCDelegate(DefaultDelegate):
             meas_diff.crank_revs = meas_difference(meas.crank_revs, self._last_measurement.crank_revs, 16)
             meas_diff.wheel_event_time = meas_difference(meas.wheel_event_time,
                                                          self._last_measurement.wheel_event_time,
-                                                         16)
+                                                         16) / 1024
             meas_diff.crank_event_time = meas_difference(meas.crank_event_time,
                                                          self._last_measurement.wheel_event_time,
-                                                         16)
-            self._prev_meas.append(meas)
+                                                         16) / 1024
+            meas_diff.time = meas.time - self._last_measurement.time
+            self._prev_meas.append(meas_diff)
         self._last_measurement = meas
 
-        if len(self._prev_meas) == self._prev_meas.maxlen:
+        if len(self._prev_meas) > 2:
             avg = 0.
             if meas.wheel_revolution_data_present:
-                avg = sum([m.wheel_revs / m.wheel_event_time for m in self._prev_meas]) / len(self._prev_meas)
+                avg = sum([m.wheel_revs for m in self._prev_meas]) / sum([m.time for m in self._prev_meas])
             if meas.crank_revolution_data_present:
-                avg = sum([m.crank_revs / m.crank_event_time for m in self._prev_meas]) / len(self._prev_meas)
+                avg = sum([m.crank_revs for m in self._prev_meas]) / sum([m.time for m in self._prev_meas])
             print("...Average speed: {} revs/s".format(avg))
 
 
