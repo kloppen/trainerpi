@@ -16,12 +16,12 @@ class CSCDelegatePrint(bleCSC.CSCDelegate):
 
 
 wheel_sensor = bleCSC.CSCSensor("D0:AC:A5:BF:B7:52", CSCDelegatePrint())
-location = wheel_sensor.get_location()
-print("Location (wheel_sensor): {}".format(location))
+location_wheel = wheel_sensor.get_location()
+print("Location (wheel_sensor): {}".format(location_wheel))
 
 crank_sensor = bleCSC.CSCSensor("C6:F9:84:6A:C0:8E", CSCDelegatePrint())
-location = crank_sensor.get_location()
-print("Location (crank_sensor): {}".format(location))
+location_crank = crank_sensor.get_location()
+print("Location (crank_sensor): {}".format(location_crank))
 
 wheel_sensor.notifications(True)
 crank_sensor.notifications(True)
