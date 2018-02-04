@@ -1,13 +1,16 @@
 import bleCSC
 
 
+ROLLING_LENGTH = 2096.  # mm
+
+
 class CSCDelegatePrint(bleCSC.CSCDelegate):
     def __init__(self):
         super(CSCDelegatePrint, self).__init__()
 
     def handle_speed_notification(self, wheel_speed: float, crank_speed: float) -> None:
-        print("Wheel: {} RPM, Crank: {} RPM".format(
-            wheel_speed * 60.,
+        print("Wheel: {} km/h, Crank: {} RPM".format(
+            wheel_speed * 3600. * ROLLING_LENGTH / 1e+6,
             crank_speed * 60.
         ))
 
