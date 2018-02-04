@@ -3,7 +3,7 @@ import bleCSC
 
 class CSCDelegatePrint(bleCSC.CSCDelegate):
     def __init__(self):
-        super(CSCDelegatePrint, self).__init__(self)
+        super(CSCDelegatePrint, self).__init__()
 
     def handle_speed_notification(self, wheel_speed: float, crank_speed: float) -> None:
         print("Wheel: {} RPM, Crank: {} RPM".format(
