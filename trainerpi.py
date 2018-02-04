@@ -15,17 +15,22 @@ class CSCDelegatePrint(bleCSC.CSCDelegate):
         ))
 
 
-sensor = bleCSC.CSCSensor("D0:AC:A5:BF:B7:52", CSCDelegatePrint())
-location = sensor.get_location()
-print("Location: {}".format(location))
+wheel_sensor = bleCSC.CSCSensor("D0:AC:A5:BF:B7:52", CSCDelegatePrint())
+location = wheel_sensor.get_location()
+print("Location (wheel_sensor): {}".format(location))
 
-sensor.notifications(True)
+crank_sensor = bleCSC.CSCSensor("C6:F9:84:6A:C0:8E", CSCDelegatePrint())
+location = crank_sensor.get_location()
+print("Location (crank_sensor): {}".format(location))
+
+wheel_sensor.notifications(True)
+crank_sensor.notifications(True)
 
 print("Entering loop...Press ctrl+c to exit")
 
 while True:
     try:
-        if sensor.wait_for_notifications(1.0):
+        if wheel_sensor.wait_for_notifications(1.0) or crank_sensor.wait_for_notifications(1.0):
             continue
         print("Waiting...")
     except (KeyboardInterrupt, SystemExit):
