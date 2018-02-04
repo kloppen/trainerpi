@@ -86,13 +86,13 @@ class CSCDelegate(DefaultDelegate):
             meas_diff = CSCMeasurement()
             meas_diff.crank_revolution_data_present = meas.crank_revolution_data_present
             meas_diff.wheel_revolution_data_present = meas.wheel_revolution_data_present
-            meas_diff.wheel_revs = meas_difference(meas.wheel_revs, self._last_measurement.wheel_revs, 32)
-            meas_diff.crank_revs = meas_difference(meas.crank_revs, self._last_measurement.crank_revs, 16)
-            meas_diff.wheel_event_time = meas_difference(meas.wheel_event_time,
-                                                         self._last_measurement.wheel_event_time,
+            meas_diff.wheel_revs = meas_difference(self._last_measurement.wheel_revs, meas.wheel_revs, 32)
+            meas_diff.crank_revs = meas_difference(self._last_measurement.crank_revs, meas.crank_revs, 16)
+            meas_diff.wheel_event_time = meas_difference(self._last_measurement.wheel_event_time,
+                                                         meas.wheel_event_time,
                                                          16) / 1024
-            meas_diff.crank_event_time = meas_difference(meas.crank_event_time,
-                                                         self._last_measurement.wheel_event_time,
+            meas_diff.crank_event_time = meas_difference(self._last_measurement.wheel_event_time,
+                                                         meas.crank_event_time,
                                                          16) / 1024
             meas_diff.time = meas.time - self._last_measurement.time
             self._prev_meas.append(meas_diff)
