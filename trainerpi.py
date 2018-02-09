@@ -14,10 +14,10 @@ class CSCDelegatePrint(bleCSC.CSCDelegate):
     def handle_speed_notification(self, wheel_speed: float, crank_speed: float) -> None:
         speed = wheel_speed * 3600. * ROLLING_LENGTH / 1e+6
         power = numpy.interp(speed, self.power_curve[:, 0], self.power_curve[:, 1])
-        print("Wheel: {:2.0f} km/h, Power: {:3.0f} W".format(
+        print("Wheel: {:2.0f} km/h, Power: {:3.0f} W, Crank: {:3.0f}".format(
             wheel_speed * 3600. * ROLLING_LENGTH / 1e+6,
-            power
-            # crank_speed * 60.
+            power,
+            crank_speed * 60.
         ))
 
 
