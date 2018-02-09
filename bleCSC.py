@@ -60,6 +60,7 @@ class CSCDelegate(DefaultDelegate):
         DefaultDelegate.__init__(self)
         self._prev_meas = collections.deque(maxlen=AVERAGE_LENGTH)
         self._last_measurement = None
+        self.notification_callback = None
 
     def handleNotification(self, cHandle, data):
         meas = CSCMeasurement()
@@ -83,20 +84,10 @@ class CSCDelegate(DefaultDelegate):
         if len(self._prev_meas) > 2:
             if meas.wheel_revolution_data_present:
                 avg = sum([m.wheel_revs for m in self._prev_meas]) / sum([m.time for m in self._prev_meas])
-                self.handle_speed_notification(avg, 0.)
+                self.notification_callback(avg, 0.)
             if meas.crank_revolution_data_present:
                 avg = sum([m.crank_revs for m in self._prev_meas]) / sum([m.time for m in self._prev_meas])
-                self.handle_speed_notification(0., avg)
-
-    def handle_speed_notification(self, wheel_speed: float, crank_speed: float) -> None:
-        """
-        A method that should be overridden to handle speed notifications.
-
-        :param wheel_speed: The wheel speed (rev/sec)
-        :param crank_speed: The crank speed (rev/sec)
-        :return: None
-        """
-        pass
+                self.notification_callback(0., avg)
 
 
 csc_service_uuid = UUID(0x1816)
@@ -109,12 +100,16 @@ class CSCSensor:
     This class defines a cycling speed and cadence sensor
     """
 
-    def __init__(self, address: str, delegate):
+    def __init__(self, address: str, notification_callback: function):
         """
         Initializes the class
         :param address: A string with the address of the sensor
+        :param notification_callback: A function that takes two floats (speed, cadence) that will be called for each
+            notification
         """
         self.peripheral = Peripheral(address, "random")
+        delegate = CSCDelegate()
+        delegate.notification_callback = notification_callback
         self.peripheral.setDelegate(delegate)
         self.cscService = self.peripheral.getServiceByUUID(csc_service_uuid)
         self.cscCharacteristic = self.cscService.getCharacteristics(csc_char_uuid)[0]

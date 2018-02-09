@@ -6,23 +6,21 @@ import threading
 ROLLING_LENGTH = 2096.  # mm
 
 
-class CSCDelegatePrint(bleCSC.CSCDelegate):
-    def __init__(self):
-        super(CSCDelegatePrint, self).__init__()
-        self.power_curve = numpy.loadtxt("power-4.csv", delimiter=",")
+power_curve = numpy.loadtxt("power-4.csv", delimiter=",")
 
-    def handle_speed_notification(self, wheel_speed: float, crank_speed: float) -> None:
-        speed = wheel_speed * 3600. * ROLLING_LENGTH / 1e+6
-        power = numpy.interp(speed, self.power_curve[:, 0], self.power_curve[:, 1])
-        print("Wheel: {:2.0f} km/h, Power: {:3.0f} W, Crank: {:3.0f}".format(
-            wheel_speed * 3600. * ROLLING_LENGTH / 1e+6,
-            power,
-            crank_speed * 60.
-        ))
+
+def handle_speed_notification(self, wheel_speed: float, crank_speed: float) -> None:
+    speed = wheel_speed * 3600. * ROLLING_LENGTH / 1e+6
+    power = numpy.interp(speed, self.power_curve[:, 0], self.power_curve[:, 1])
+    print("Wheel: {:2.0f} km/h, Power: {:3.0f} W, Crank: {:3.0f}".format(
+        wheel_speed * 3600. * ROLLING_LENGTH / 1e+6,
+        power,
+        crank_speed * 60.
+    ))
 
 
 def wheel_thread_worker():
-    wheel_sensor = bleCSC.CSCSensor("D0:AC:A5:BF:B7:52", CSCDelegatePrint())
+    wheel_sensor = bleCSC.CSCSensor("D0:AC:A5:BF:B7:52", handle_speed_notification)
     location_wheel = wheel_sensor.get_location()
     print("Location (wheel_sensor): {}".format(location_wheel))
     wheel_sensor.notifications(True)
@@ -36,7 +34,7 @@ def wheel_thread_worker():
 
 
 def crank_thread_worker():
-    crank_sensor = bleCSC.CSCSensor("C6:F9:84:6A:C0:8E", CSCDelegatePrint())
+    crank_sensor = bleCSC.CSCSensor("C6:F9:84:6A:C0:8E", handle_speed_notification)
     location_crank = crank_sensor.get_location()
     print("Location (crank_sensor): {}".format(location_crank))
     crank_sensor.notifications(True)
