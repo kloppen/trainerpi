@@ -131,6 +131,11 @@ http://effbot.org/tkinterbook/
 Termianl printing/updating
 https://stackoverflow.com/questions/2122385/dynamic-terminal-printing-with-python
 
+# Console Text Size
+```
+sudo dpkg-reconfigure console-setup
+```
+Choose the font VGA, then set the font size as 16x32 (was 8x8)
 
 # GPIO Input
 The screen comes with four buttons. We'll map these so that we can launch the program with them.
