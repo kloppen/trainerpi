@@ -1,5 +1,6 @@
 import bleCSC
 import numpy
+import threading
 
 
 ROLLING_LENGTH = 2096.  # mm
@@ -20,25 +21,38 @@ class CSCDelegatePrint(bleCSC.CSCDelegate):
         ))
 
 
-wheel_sensor = bleCSC.CSCSensor("D0:AC:A5:BF:B7:52", CSCDelegatePrint())
-location_wheel = wheel_sensor.get_location()
-print("Location (wheel_sensor): {}".format(location_wheel))
+def wheel_thread_worker():
+    wheel_sensor = bleCSC.CSCSensor("D0:AC:A5:BF:B7:52", CSCDelegatePrint())
+    location_wheel = wheel_sensor.get_location()
+    print("Location (wheel_sensor): {}".format(location_wheel))
+    wheel_sensor.notifications(True)
+    while True:
+        try:
+            if wheel_sensor.wait_for_notifications(1.0):
+                continue
+            print("Waiting for wheel...")
+        except (KeyboardInterrupt, SystemExit):
+            break
 
-# crank_sensor = bleCSC.CSCSensor("C6:F9:84:6A:C0:8E", CSCDelegatePrint())
-# location_crank = crank_sensor.get_location()
-# print("Location (crank_sensor): {}".format(location_crank))
 
-wheel_sensor.notifications(True)
-# crank_sensor.notifications(True)
+def crank_thread_worker():
+    crank_sensor = bleCSC.CSCSensor("C6:F9:84:6A:C0:8E", CSCDelegatePrint())
+    location_crank = crank_sensor.get_location()
+    print("Location (crank_sensor): {}".format(location_crank))
+    crank_sensor.notifications(True)
+    while True:
+        try:
+            if crank_sensor.wait_for_notifications(1.0):
+                continue
+            print("Waiting for crank...")
+        except (KeyboardInterrupt, SystemExit):
+            break
 
-print("Entering loop...Press ctrl+c to exit")
 
-while True:
-    try:
-        if wheel_sensor.wait_for_notifications(1.0):  # or crank_sensor.wait_for_notifications(1.0):
-            continue
-        print("Waiting...")
-    except (KeyboardInterrupt, SystemExit):
-        break
+wheel_thread = threading.Thread(target=wheel_thread_worker)
+crank_thread = threading.Thread(target=crank_thread_worker)
+
+wheel_thread.start()
+crank_thread.start()
 
 print("Exiting")
