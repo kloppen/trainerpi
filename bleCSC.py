@@ -2,6 +2,7 @@ from bluepy.btle import UUID, Peripheral, DefaultDelegate
 import struct
 import collections
 import time
+from typing import Callable
 
 
 class CSCMeasurement:
@@ -100,7 +101,8 @@ class CSCSensor:
     This class defines a cycling speed and cadence sensor
     """
 
-    def __init__(self, address: str, notification_callback: function):
+    def __init__(self, address: str, 
+                 notification_callback: Callable[[float, float], None]):
         """
         Initializes the class
         :param address: A string with the address of the sensor

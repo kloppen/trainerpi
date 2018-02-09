@@ -9,9 +9,9 @@ ROLLING_LENGTH = 2096.  # mm
 power_curve = numpy.loadtxt("power-4.csv", delimiter=",")
 
 
-def handle_speed_notification(self, wheel_speed: float, crank_speed: float) -> None:
+def handle_speed_notification(wheel_speed: float, crank_speed: float) -> None:
     speed = wheel_speed * 3600. * ROLLING_LENGTH / 1e+6
-    power = numpy.interp(speed, self.power_curve[:, 0], self.power_curve[:, 1])
+    power = numpy.interp(speed, power_curve[:, 0], power_curve[:, 1])
     print("Wheel: {:2.0f} km/h, Power: {:3.0f} W, Crank: {:3.0f}".format(
         wheel_speed * 3600. * ROLLING_LENGTH / 1e+6,
         power,
