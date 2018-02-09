@@ -12,13 +12,26 @@ class CSCThread(threading.Thread):
     def __init__(self, group=None, name=None):
         threading.Thread.__init__(self, group=group, target=self.worker, name=name)
         self.address = ""
-        self.number = 0
+        self._number = 0
         self.stdscr = None
+        self._location_row = 0
+        self._data_row = 0
+
+    @property
+    def number(self):
+        return self._number
+
+    @number.setter
+    def number(self, value):
+        self._number = value
+        n = 3
+        self._location_row = n * value
+        self._data_row = n * value + 1
 
     def handle_notification(self, wheel_speed: float, crank_speed: float) -> None:
         speed = wheel_speed * 3600. * ROLLING_LENGTH / 1e+6
         power = numpy.interp(speed, power_curve[:, 0], power_curve[:, 1])
-        self.stdscr.addstr(self.number, 0, "Wheel: {:2.0f} km/h, Power: {:3.0f} W, Crank: {:3.0f}".format(
+        self.stdscr.addstr(self._data_row, 0, "Wheel: {:2.0f} km/h, Power: {:3.0f} W, Crank: {:3.0f}".format(
             wheel_speed * 3600. * ROLLING_LENGTH / 1e+6,
             power,
             crank_speed * 60.
@@ -28,13 +41,14 @@ class CSCThread(threading.Thread):
     def worker(self):
         sensor = bleCSC.CSCSensor(self.address, self.handle_notification)
         location_wheel = sensor.get_location()
-        print("Location (wheel_sensor): {}".format(location_wheel))
+        self.stdscr.addstr(self._location_row, 0, "Location (wheel_sensor): {}".format(location_wheel))
+        self.stdscr.refresh()
         sensor.notifications(True)
         while True:
             try:
                 if sensor.wait_for_notifications(1.0):
                     continue
-                self.stdscr.addstr(self.number, 0, "Waiting for Sensor {}...".format(self.number))
+                self.stdscr.addstr(self._data_row, 0, "Waiting for Sensor {}...".format(self.number))
                 self.stdscr.refresh()
             except (KeyboardInterrupt, SystemExit):
                 break
