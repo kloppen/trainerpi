@@ -61,7 +61,7 @@ class CSCThread(threading.Thread):
 
 def main_screen(stdscr):
     stdscr.clear()
-    stdscr.curs_set(0)
+    curses.curs_set(0)
     stdscr.refresh()
 
     sensor1_thread = CSCThread()
