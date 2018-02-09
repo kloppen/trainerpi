@@ -42,7 +42,7 @@ class CSCWorker:
             ))
         self.stdscr.refresh()
 
-    def worker(self):
+    async def worker(self):
         sensor = bleCSC.CSCSensor(self.address, self.handle_notification)
         self._location = sensor.get_location()
         self.stdscr.addstr(self._location_row, 0, "Location: {}".format(self._location))
@@ -50,11 +50,7 @@ class CSCWorker:
         sensor.notifications(True)
         while True:
             try:
-                notify_ret = await sensor.wait_for_notifications(1.0)
-                if notify_ret:
-                    continue
-                self.stdscr.addstr(self._data_row, 0, "Waiting for Sensor {}...".format(self.number))
-                self.stdscr.refresh()
+                await sensor.wait_for_notifications(1.0)
             except (KeyboardInterrupt, SystemExit):
                 break
 
