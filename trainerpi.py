@@ -1,6 +1,6 @@
 import bleCSC
 import numpy
-import threading
+import asyncio
 import curses
 
 
@@ -8,9 +8,8 @@ ROLLING_LENGTH = 2096.  # mm
 power_curve = numpy.loadtxt("power-4.csv", delimiter=",")
 
 
-class CSCThread(threading.Thread):
-    def __init__(self, group=None, name=None):
-        threading.Thread.__init__(self, group=group, target=self.worker, name=name)
+class CSCWorker:
+    def __init__(self):
         self.address = ""
         self._number = 0
         self.stdscr = None
@@ -51,7 +50,8 @@ class CSCThread(threading.Thread):
         sensor.notifications(True)
         while True:
             try:
-                if sensor.wait_for_notifications(1.0):
+                notify_ret = await sensor.wait_for_notifications(1.0)
+                if notify_ret:
                     continue
                 self.stdscr.addstr(self._data_row, 0, "Waiting for Sensor {}...".format(self.number))
                 self.stdscr.refresh()
@@ -64,18 +64,22 @@ def main_screen(stdscr):
     curses.curs_set(0)
     stdscr.refresh()
 
-    sensor1_thread = CSCThread()
+    sensor1_thread = CSCWorker()
     sensor1_thread.address = "D0:AC:A5:BF:B7:52"
     sensor1_thread.number = 1
     sensor1_thread.stdscr = stdscr
 
-    sensor2_thread = CSCThread()
+    sensor2_thread = CSCWorker()
     sensor2_thread.address = "C6:F9:84:6A:C0:8E"
     sensor2_thread.number = 2
     sensor2_thread.stdscr = stdscr
 
-    sensor1_thread.start()
-    sensor2_thread.start()
+    ioloop = asyncio.get_event_loop()
+    tasks = [ioloop.create_task(sensor1_thread.worker()),
+             ioloop.create_task(sensor2_thread.worker())]
+    wait_tasks = asyncio.wait(tasks)
+    ioloop.run_until_complete(wait_tasks)
+    ioloop.close()
 
 
 curses.wrapper(main_screen)
