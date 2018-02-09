@@ -16,6 +16,7 @@ class CSCThread(threading.Thread):
         self.stdscr = None
         self._location_row = 0
         self._data_row = 0
+        self._location = None
 
     @property
     def number(self):
@@ -31,17 +32,21 @@ class CSCThread(threading.Thread):
     def handle_notification(self, wheel_speed: float, crank_speed: float) -> None:
         speed = wheel_speed * 3600. * ROLLING_LENGTH / 1e+6
         power = numpy.interp(speed, power_curve[:, 0], power_curve[:, 1])
-        self.stdscr.addstr(self._data_row, 0, "Wheel: {:2.0f} km/h, Power: {:3.0f} W, Crank: {:3.0f}".format(
-            wheel_speed * 3600. * ROLLING_LENGTH / 1e+6,
-            power,
-            crank_speed * 60.
-        ))
+        if "Wheel" in self._location:
+            self.stdscr.addstr(self._data_row, 0, "Wheel: {:2.0f} km/h, Power: {:3.0f} W".format(
+                wheel_speed * 3600. * ROLLING_LENGTH / 1e+6,
+                power
+            ))
+        if "Crank" in self._location:
+            self.stdscr.addstr(self._data_row, 0, "Crank: {:3.0f}".format(
+                crank_speed * 60.
+            ))
         self.stdscr.refresh()
 
     def worker(self):
         sensor = bleCSC.CSCSensor(self.address, self.handle_notification)
-        location_wheel = sensor.get_location()
-        self.stdscr.addstr(self._location_row, 0, "Location (wheel_sensor): {}".format(location_wheel))
+        self._location = sensor.get_location()
+        self.stdscr.addstr(self._location_row, 0, "Location: {}".format(self._location))
         self.stdscr.refresh()
         sensor.notifications(True)
         while True:
@@ -56,6 +61,7 @@ class CSCThread(threading.Thread):
 
 def main_screen(stdscr):
     stdscr.clear()
+    stdscr.refresh()
 
     sensor1_thread = CSCThread()
     sensor1_thread.address = "D0:AC:A5:BF:B7:52"
