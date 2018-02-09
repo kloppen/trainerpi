@@ -131,3 +131,24 @@ http://effbot.org/tkinterbook/
 Termianl printing/updating
 https://stackoverflow.com/questions/2122385/dynamic-terminal-printing-with-python
 
+
+# GPIO Input
+The screen comes with four buttons. We'll map these so that we can launch the program with them.
+
+First, install the prerequisites:
+
+```
+sudo apt-get install input-utils
+```
+
+Run lsinput to list the input devices (disconnect any keyboards, etc.)
+
+```
+lsinput
+```
+
+Now, 
+
+Reference: http://blog.gegg.us/2017/01/setting-up-a-gpio-button-keyboard-on-a-raspberry-pi/
+
+
