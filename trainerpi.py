@@ -32,14 +32,16 @@ class CSCWorker:
         speed = wheel_speed * 3600. * ROLLING_LENGTH / 1e+6
         power = numpy.interp(speed, power_curve[:, 0], power_curve[:, 1])
         if "Wheel" in self._location:
-            self.stdscr.addstr(self._data_row, 0, "Wheel: {:2.0f} km/h, Power: {:3.0f} W".format(
+            self.stdscr.addstr(self._data_row, 0, "{:2.0f} km/h, {:3.0f} W".format(
                 wheel_speed * 3600. * ROLLING_LENGTH / 1e+6,
                 power
-            ))
+            ),
+            curses.color_pair(1))
         if "Crank" in self._location:
-            self.stdscr.addstr(self._data_row, 0, "Crank: {:3.0f}".format(
+            self.stdscr.addstr(self._data_row, 0, "{:3.0f} RPM".format(
                 crank_speed * 60.
-            ))
+            ),
+            curses.color_pair(2))
         self.stdscr.refresh()
 
     async def worker(self):
@@ -47,7 +49,7 @@ class CSCWorker:
         sensor.connect(self.address, self.handle_notification)
         await asyncio.sleep(0)
         self._location = sensor.get_location()
-        self.stdscr.addstr(self._location_row, 0, "Location: {}".format(self._location))
+        self.stdscr.addstr(self._location_row, 0, "Location: {}".format(self._location), curses.color_pair(3))
         self.stdscr.refresh()
         await asyncio.sleep(0)
         sensor.notifications(True)
@@ -66,6 +68,9 @@ class CSCWorker:
 def main_screen(stdscr):
     stdscr.clear()
     curses.curs_set(0)
+    curses.init_pair(1, curses.COLOR_BLUE, curses.COLOR_BLACK)
+    curses.init_pair(2, curses.COLOR_GREEN, curses.COLOR_BLACK)
+    curses.init_pair(3, curses.COLOR_WHITE, curses.COLOR_BLACK)
     stdscr.refresh()
 
     sensor1_thread = CSCWorker()
