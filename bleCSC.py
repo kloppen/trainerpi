@@ -145,7 +145,6 @@ class CSCSensor:
         location = self.peripheral.readCharacteristic(handle)
         return location_list[int.from_bytes(location, "little")]
 
-    @asyncio.coroutine
     def notifications(self, notify: bool) -> None:
         """
         Starts or stops notifications from this sensor
@@ -160,6 +159,8 @@ class CSCSensor:
 
         self.peripheral.writeCharacteristic(hccc, struct.pack("<bb", 0x01 & notify, 0x00))
 
+    
+    @asyncio.coroutine
     def wait_for_notifications(self, time: float) -> bool:
         """
         Wait `time` seconds for a notification
