@@ -43,11 +43,12 @@ class CSCWorker:
         self.stdscr.refresh()
 
     async def worker(self):
-        sensor = bleCSC.CSCSensor(self.address, self.handle_notification)
-        self._location = sensor.get_location()
+        sensor = bleCSC.CSCSensor()
+        await sensor.connect(self.address, self.handle_notification)
+        self._location = await sensor.get_location()
         self.stdscr.addstr(self._location_row, 0, "Location: {}".format(self._location))
         self.stdscr.refresh()
-        sensor.notifications(True)
+        await sensor.notifications(True)
         while True:
             try:
                 notify_ret = await sensor.wait_for_notifications(1.0)
