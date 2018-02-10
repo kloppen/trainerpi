@@ -3,6 +3,7 @@ import struct
 import collections
 import time
 from typing import Callable
+import asyncio
 
 
 class CSCMeasurement:
@@ -144,6 +145,7 @@ class CSCSensor:
         location = self.peripheral.readCharacteristic(handle)
         return location_list[int.from_bytes(location, "little")]
 
+    @asyncio.coroutine
     def notifications(self, notify: bool) -> None:
         """
         Starts or stops notifications from this sensor

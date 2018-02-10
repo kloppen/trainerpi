@@ -50,7 +50,11 @@ class CSCWorker:
         sensor.notifications(True)
         while True:
             try:
-                await sensor.wait_for_notifications(1.0)
+                notify_ret = await sensor.wait_for_notifications(1.0)
+                if notify_ret:
+                    continue
+                self.stdscr.addstr(self._data_row, 0, "Waiting for Sensor {}...".format(self.number))
+                self.stdscr.refresh()
             except (KeyboardInterrupt, SystemExit):
                 break
 
