@@ -108,8 +108,7 @@ class CSCSensor:
         self.cscCharacteristic = None
         self.cscCharacteristicHandle = None
 
-    @asyncio.coroutine
-    async def connect(self, address: str,
+    def connect(self, address: str,
                       notification_callback: Callable[[float, float], None]):
         """
         Initializes the class
@@ -125,8 +124,7 @@ class CSCSensor:
         self.cscCharacteristic = self.cscService.getCharacteristics(CSC_CHAR_UUID)[0]
         self.cscCharacteristicHandle = self.cscCharacteristic.getHandle()
 
-    @asyncio.coroutine
-    async def get_location(self) -> str:
+    def get_location(self) -> str:
         """
         Returns the location of the sensor
         :return: an integer representing the location
@@ -153,8 +151,7 @@ class CSCSensor:
         location = self.peripheral.readCharacteristic(handle)
         return location_list[int.from_bytes(location, "little")]
 
-    @asyncio.coroutine
-    async def notifications(self, notify: bool) -> None:
+    def notifications(self, notify: bool) -> None:
         """
         Starts or stops notifications from this sensor
         :param notify: True to start notifications, False to stop
