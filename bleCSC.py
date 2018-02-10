@@ -159,9 +159,8 @@ class CSCSensor:
 
         self.peripheral.writeCharacteristic(hccc, struct.pack("<bb", 0x01 & notify, 0x00))
 
-    
     @asyncio.coroutine
-    def wait_for_notifications(self, time: float) -> bool:
+    async def wait_for_notifications(self, time: float) -> bool:
         """
         Wait `time` seconds for a notification
         :param time: The number of seconds to wait
