@@ -3,6 +3,7 @@ import struct
 import collections
 import time
 from typing import Callable
+import asyncio
 
 
 class CSCMeasurement:
@@ -91,9 +92,9 @@ class CSCDelegate(DefaultDelegate):
                 self.notification_callback(0., avg)
 
 
-csc_service_uuid = UUID(0x1816)
-csc_char_uuid = UUID(0x2A5B)
-location_char_uuid = UUID(0x2A5D)
+CSC_SERVICE_UUID = UUID(0x1816)
+CSC_CHAR_UUID = UUID(0x2A5B)
+LOCATION_CHAR_UUID = UUID(0x2A5D)
 
 
 class CSCSensor:
@@ -101,8 +102,14 @@ class CSCSensor:
     This class defines a cycling speed and cadence sensor
     """
 
-    def __init__(self, address: str, 
-                 notification_callback: Callable[[float, float], None]):
+    def __init__(self):
+        self.peripheral = None
+        self.cscService = None
+        self.cscCharacteristic = None
+        self.cscCharacteristicHandle = None
+
+    def connect(self, address: str,
+                      notification_callback: Callable[[float, float], None]):
         """
         Initializes the class
         :param address: A string with the address of the sensor
@@ -113,8 +120,8 @@ class CSCSensor:
         delegate = CSCDelegate()
         delegate.notification_callback = notification_callback
         self.peripheral.setDelegate(delegate)
-        self.cscService = self.peripheral.getServiceByUUID(csc_service_uuid)
-        self.cscCharacteristic = self.cscService.getCharacteristics(csc_char_uuid)[0]
+        self.cscService = self.peripheral.getServiceByUUID(CSC_SERVICE_UUID)
+        self.cscCharacteristic = self.cscService.getCharacteristics(CSC_CHAR_UUID)[0]
         self.cscCharacteristicHandle = self.cscCharacteristic.getHandle()
 
     def get_location(self) -> str:
@@ -139,7 +146,7 @@ class CSCSensor:
                          "Chest",
                          "Spider",
                          "Chain Ring"]
-        characteristic = self.cscService.getCharacteristics(location_char_uuid)[0]
+        characteristic = self.cscService.getCharacteristics(LOCATION_CHAR_UUID)[0]
         handle = characteristic.getHandle()
         location = self.peripheral.readCharacteristic(handle)
         return location_list[int.from_bytes(location, "little")]
@@ -158,7 +165,8 @@ class CSCSensor:
 
         self.peripheral.writeCharacteristic(hccc, struct.pack("<bb", 0x01 & notify, 0x00))
 
-    def wait_for_notifications(self, time: float) -> bool:
+    @asyncio.coroutine
+    async def wait_for_notifications(self, time: float) -> bool:
         """
         Wait `time` seconds for a notification
         :param time: The number of seconds to wait
