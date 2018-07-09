@@ -1,37 +1,65 @@
+# Introduction
+
+
+# Bill of Materials
 
 PiTFT Plus LCD/Touchscreen [https://learn.adafruit.com/running-opengl-based-games-and-emulators-on-adafruit-pitft-displays/pitft-setup]
 
-Install image that includes TFT support from here:
-https://learn.adafruit.com/adafruit-pitft-28-inch-resistive-touchscreen-display-raspberry-pi/easy-install
+# Installation and Setup
+## Basic Setup
+These instructions are based on installing Raspberrian Stretch. If you are
+using a newer version of Raspberrian, the instructions will likely work with
+a few tweaks.
 
-# PiTFT on Rasperrian Stretch
+First, install Raspberrian Stretch on an SD card.
 
-https://learn.adafruit.com/adafruit-pitft-28-inch-resistive-touchscreen-display-raspberry-pi/help-faq
+Plug in the Pi to a keyboard, mouse and monitor and boot it. You'll need to
+connect to your WiFi network. You'll also want to use the Raspberry Pi
+Configuration utility to set a few parameters:
+
+- Hostname: `trainerpi`
+- Boot: To CLI
+- SSH: Enabled
+- Keyboard: Your choice (I used United States/English (US)
+- Locale: Your choice
+- Timezone
+
+Now, reboot the Pi and you'll be able to ssh into it.
+
+Now is a very good time to change the password for the default `pi` account.
+Also, you'll probably want to copy your SSH key to the Pi so that you can
+ssh into it without having to enter a password. Optionally, once you've done
+so, you can disable password authentication.
+
+You'll probably want to update/upgrade all the packages on the Pi using
+`apt-get`.
+
+## Configuration of the Screen
+Follow the instructions from [here](https://learn.adafruit.com/adafruit-pitft-28-inch-resistive-touchscreen-display-raspberry-pi/easy-install-2)
 
 ```
-sudo apt-get update
-wget https://raw.githubusercontent.com/adafruit/Adafruit-PiTFT-Helper/master/adafruit-pitft-helper
-chmod +x adafruit-pitft-helper
-sudo ./adafruit-pitft-helper -t 28r
+cd ~
+wget https://raw.githubusercontent.com/adafruit/Raspberry-Pi-Installer-Scripts/master/adafruit-pitft.sh
+chmod +x adafruit-pitft.sh
+sudo ./adafruit-pitft.sh
 ```
+
 Select the following options:
 
-Console = yes
-GPIO23 = yes
+- PiTFT 2.4", 2.8" or 3.2" resistive (240x320)
+- 90 Degrees (landscape)
+- Console: yes
 
 Reboot the pi
 
-# Bluetooth
-
-https://www.jaredwolff.com/blog/get-started-with-bluetooth-low-energy/
-https://www.spinics.net/lists/linux-bluetooth/msg66942.html
-
-Install latest bluez (https://learn.adafruit.com/install-bluez-on-the-raspberry-pi/installation):
+## Setup Bluetooth
+Install latest bluez. See
+[https://learn.adafruit.com/install-bluez-on-the-raspberry-pi/installation](https://learn.adafruit.com/install-bluez-on-the-raspberry-pi/installation):
 
 ```
-wget http://www.kernel.org/pub/linux/bluetooth/bluez-5.48.tar.xz
-tar xvf bluez-5.48.tar.xz
-cd bluez-5.37
+wget http://www.kernel.org/pub/linux/bluetooth/bluez-5.49.tar.xz
+tar xvf bluez-5.49.tar.xz
+cd bluez-5.49
 sudo apt-get update
 sudo apt-get install libusb-dev libdbus-1-dev libglib2.0-dev libudev-dev libical-dev libreadline-dev
 ./configure
@@ -41,16 +69,62 @@ systemctl status bluetooth
 sudo systemctl start bluetooth
 ```
 
+## Install the Required System Packages
+Install the following packages
 
-Scan BT-LE devices:
+```
+sudo apt-get install bluez
+sudo apt-get install libglib2.0-dev
+sudo apt-get install python3-dev
+sudo apt-get install libboost-python-dev
+sudo apt-get install libboost-dev
+sudo apt-get install libboost-all-dev
+sudo apt-get install libbluetooth-dev libreadline-dev
+sudo apt-get install libgtk-3-dev
+sudo apt-get install bluetooth
+sudo apt-get install pi-bluetooth
+sudo apt-get install bluez
+sudo apt-get install libglib2.0-dev
+```
+
+## Install the Required Python Packages
+
+
+# Bluetooth
+You'll need to find the addresses of your two sensors. You can do this by using
+`bluetoothctl` as follows:
 
 ```
 bluetoothctl
 [bluetooth]# scan on
+```
+Now, you'll need to move one of the sensors so that it wakes up and starts
+sending data. The device address should show up on your screen when you do
+so. Make note of this address. Now, move the other sensor and make note of
+its address.
+
+Once you have the two addresses, you can connect to one of the sensors to
+see the data stream coming out of it.
+
+```
 [bluetooth]# scan off
 [bluetooth]# connect <BLE ADDRESS>
+[sensor-name]# info <BLE ADDRESS>
+```
+
+This should produce an output that includes a line about Cycling Speed and
+Cadence. Do the same for the other sensor. This will tell you that you're
+able to connect. You can now quit by typing `quit`
+
+# Bluetooth Theory
+The Bluetooth CSC sensors
+
+# Configuration
+
+
+
 [sensor-name]# list-attributes <BLE ADDRESS>
-[sensor-name]# select-attribute /org/bluez/hci0/dev_D0_AC_A5_BF_B7_52/service0018/char0019
+[sensor-name]# select /org/bluez/hci0/dev_D0_AC_A5_BF_B7_52/service0018/char0019
 [sensor-name:/service0018/char0019]# notify on
 [sensor-name:/service0018/char0019]# notify off
 [sensor-name:/service0018/char0019]# disconnect
@@ -157,3 +231,9 @@ Now,
 Reference: http://blog.gegg.us/2017/01/setting-up-a-gpio-button-keyboard-on-a-raspberry-pi/
 
 
+# References
+
+- https://learn.adafruit.com/install-bluez-on-the-raspberry-pi/installation
+- https://www.jaredwolff.com/blog/get-started-with-bluetooth-low-energy/
+- https://www.spinics.net/lists/linux-bluetooth/msg66942.html
+- https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.cycling_speed_and_cadence.xml
