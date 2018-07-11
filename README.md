@@ -1,8 +1,18 @@
 # Introduction
+This project provides a simple interface to bluetooth speed and cadence sensors
+that you can use with your bike. It's intended for use when your bike is on a
+trainer. Using power curves published
+[here](http://www.powercurvesensor.com/cycling-trainer-power-curves/), it
+estimates the power dissipated by the resistance unit of the trainer.
 
+This README provides an outline of the installation and use of the `trainerpi`
+software in this repository. It assumes a basic understanding of Linux, git and
+Raspberry Pi.
+
+TODO: Insert some photos
 
 # Bill of Materials
-
+TODO: Complete the BOM
 PiTFT Plus LCD/Touchscreen [https://learn.adafruit.com/running-opengl-based-games-and-emulators-on-adafruit-pitft-displays/pitft-setup]
 
 # Installation and Setup
@@ -52,50 +62,42 @@ Select the following options:
 
 Reboot the pi
 
+## Installing the Required System Packages
+Install the following system packages:
+
+```
+sudo apt-get update
+sudo apt-get install libusb-dev libdbus-1-dev libglib2.0-dev libudev-dev
+sudo apt-get install libical-dev libreadline-dev libglib2.0-dev
+sudo apt-get install bluez libglib2.0-dev python3-dev libboost-python-dev
+sudo apt-get install libboost-dev libboost-all-dev libbluetooth-dev
+sudo apt-get install libreadline-dev libgtk-3-dev bluetooth pi-bluetooth
+sudo apt-get install libatlas-base-dev
+```
+
 ## Setup Bluetooth
 Install latest bluez. See
 [https://learn.adafruit.com/install-bluez-on-the-raspberry-pi/installation](https://learn.adafruit.com/install-bluez-on-the-raspberry-pi/installation):
 
 ```
-wget http://www.kernel.org/pub/linux/bluetooth/bluez-5.49.tar.xz
-tar xvf bluez-5.49.tar.xz
-cd bluez-5.49
+wget http://www.kernel.org/pub/linux/bluetooth/bluez-5.50.tar.xz
+tar xvf bluez-5.50.tar.xz
+cd bluez-5.50
 sudo apt-get update
-sudo apt-get install libusb-dev libdbus-1-dev libglib2.0-dev libudev-dev libical-dev libreadline-dev
 ./configure
 make
 sudo make install
-systemctl status bluetooth
+sudo systemctl enable bluetooth
 sudo systemctl start bluetooth
 ```
 
-## Install the Required System Packages
-Install the following packages
-
-```
-sudo apt-get install bluez
-sudo apt-get install libglib2.0-dev
-sudo apt-get install python3-dev
-sudo apt-get install libboost-python-dev
-sudo apt-get install libboost-dev
-sudo apt-get install libboost-all-dev
-sudo apt-get install libbluetooth-dev libreadline-dev
-sudo apt-get install libgtk-3-dev
-sudo apt-get install bluetooth
-sudo apt-get install pi-bluetooth
-sudo apt-get install bluez
-sudo apt-get install libglib2.0-dev
-```
-
-## Install the Required Python Packages
-
-
-# Bluetooth
+# Playing Around with Bluetooth
 You'll need to find the addresses of your two sensors. You can do this by using
-`bluetoothctl` as follows:
+`bluetoothctl` as follows.
 
 ```
 bluetoothctl
+[bluetooth]# power on  # This may not be necessary
 [bluetooth]# scan on
 ```
 Now, you'll need to move one of the sensors so that it wakes up and starts
@@ -112,123 +114,107 @@ see the data stream coming out of it.
 [sensor-name]# info <BLE ADDRESS>
 ```
 
-This should produce an output that includes a line about Cycling Speed and
-Cadence. Do the same for the other sensor. This will tell you that you're
-able to connect. You can now quit by typing `quit`
+This should produce an output that looks like the following:
 
-# Bluetooth Theory
-The Bluetooth CSC sensors
-
-# Configuration
-
-
-
-[sensor-name]# list-attributes <BLE ADDRESS>
-[sensor-name]# select /org/bluez/hci0/dev_D0_AC_A5_BF_B7_52/service0018/char0019
-[sensor-name:/service0018/char0019]# notify on
-[sensor-name:/service0018/char0019]# notify off
-[sensor-name:/service0018/char0019]# disconnect
+```
+Device D0:AC:A5:BF:B7:52 (random)
+	Name: 27700-113
+	Alias: 27700-113
+	Appearance: 0x0480
+	Paired: no
+	Trusted: no
+	Blocked: no
+	Connected: no
+	LegacyPairing: no
+	UUID: Generic Access Profile    (00001800-0000-1000-8000-00805f9b34fb)
+	UUID: Generic Attribute Profile (00001801-0000-1000-8000-00805f9b34fb)
+	UUID: Cycling Speed and Cadence (00001816-0000-1000-8000-00805f9b34fb)
+	UUID: Nordic Semiconductor ASA  (0000fe59-0000-1000-8000-00805f9b34fb)
+	UUID: Nordic UART Service       (6e400001-b5a3-f393-e0a9-e50e24dcca9e)
+	ManufacturerData Key: 0xffff
+	ManufacturerData Value:
+  6b 00 34 6c 71 03 00 01 00 01                    k.4lq.....
+	RSSI: -71
 ```
 
-Sensor 1: D0:AC:A5:BF:B7:52
-UUIDs:
-	00001800-0000-1000-8000-00805f9b34fb
-	00001801-0000-1000-8000-00805f9b34fb
+Now, you can connect to the sensor:
+
+```
+connect <BLE ADDRESS>
+```
+
+This should produce an output like the following. Note that I've removed some
+of the unnecessary lines.
+
+```
+Attempting to connect to D0:AC:A5:BF:B7:52
+[CHG] Device D0:AC:A5:BF:B7:52 Connected: yes
+Connection successful
+...
+[NEW] Primary Service
+	/org/bluez/hci0/dev_D0_AC_A5_BF_B7_52/service0018
 	00001816-0000-1000-8000-00805f9b34fb
-	0000fe59-0000-1000-8000-00805f9b34fb
-	6e400001-b5a3-f393-e0a9-e50e24dcca9e
-
-    
-https://github.com/IanHarvey/bluepy/issues/53
-
-https://github.com/ukBaz/python-bluezero
-https://www.youtube.com/watch?v=F39xhYWHDKA
-
-Information about GATT service "Cycling Speed and Cadence":
-https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.cycling_speed_and_cadence.xml
-
-
-```
-# sudo pip3 install pygatt
-# sudo pip3 install pybluez
-# sudo apt-get install python-dev
-# sudo apt-get install python-gattlib
-# sudo apt-get install libboost-python-dev
-# sudo apt-get install libboost-dev
-# sudo apt-get install libboost-all-dev
-# sudo pip3 install gattlib
-# sudo pip3 install pybluez[ble]
-# sudo apt-get install libgtk2.0-dev
-# sudo apt-get install libbluetooth-dev libreadline-dev
-# sudo pip3 install bluepy
-sudo pip3 install bluezero
-sudo pip3 install dbus
+	Cycling Speed and Cadence
+[NEW] Characteristic
+	/org/bluez/hci0/dev_D0_AC_A5_BF_B7_52/service0018/char0019
+	00002a5b-0000-1000-8000-00805f9b34fb
+	CSC Measurement
+...
+[NEW] Characteristic
+	/org/bluez/hci0/dev_D0_AC_A5_BF_B7_52/service0018/char001e
+	00002a5d-0000-1000-8000-00805f9b34fb
+	Sensor Location
+...
+[CHG] Device D0:AC:A5:BF:B7:52 ServicesResolved: yes
 ```
 
-https://bitbucket.org/OscarAcena/pygattlib
-https://www.slideshare.net/LarsAlexanderBlumber/ble-with-raspberry-pi
-
-
-# Bluetooth (Stretch)
+Now, you'll need to switch into the `gatt` menu,  select characteristic 0x0019
+and view the data. In the snippet below, replace the path after
+`select-attribute` with the path for characteristic 0x0019 shown earlier.
 
 ```
-sudo apt-get install python3-dev
-sudo apt-get install libboost-python-dev
-sudo apt-get install libboost-dev
-sudo apt-get install libboost-all-dev
-sudo apt-get install libgtk2.0-dev
-sudo apt-get install libbluetooth-dev libreadline-dev
-sudo apt-get install libgtk-3-dev
-pip3 download gattlib
-tar xvzf ./gattlib-0.20150805.tar.gz
-cd gattlib-0.20150805/
-sed -ie 's/boost_python-py34/boost_python-py35/' setup.py
-sudo pip3 install .
-sudo apt-get install bluetooth
-sudo apt-get install pi-bluetooth
-sudo reboot now
-sudo apt-get install bluez
-sudo apt-get install libglib2.0-dev
-sudo pip3 install bluepy
+menu gatt
+select-attribute /org/bluez/hci0/dev_D0_AC_A5_BF_B7_52/service0018/char0019
+notify on
 ```
 
-https://github.com/rlangoy/bluepy_examples_nRF51822_mbed
-
-
-```
-a = numpy.loadtxt("power-4.csv", delimiter=",")
-numpy.interp(xi, a[:,0], a[:,1])
-```
-
-http://effbot.org/tkinterbook/
-
-Termianl printing/updating
-https://stackoverflow.com/questions/2122385/dynamic-terminal-printing-with-python
-
-# Console Text Size
-```
-sudo dpkg-reconfigure console-setup
-```
-Choose the font VGA, then set the font size as 16x32 (was 8x8)
-
-# GPIO Input
-The screen comes with four buttons. We'll map these so that we can launch the program with them.
-
-First, install the prerequisites:
+You'll see a stream of data that looks like the following (to stop it, type
+`notify off`).
 
 ```
-sudo apt-get install input-utils
+[CHG] Attribute /org/bluez/hci0/dev_D0_AC_A5_BF_B7_52/service0018/char0019 Value:
+  01 0e 71 00 00 3e e9                             ..q..>.
+[CHG] Attribute /org/bluez/hci0/dev_D0_AC_A5_BF_B7_52/service0018/char0019 Value:
+  01 0e 71 00 00 3e e9                             ..q..>.
+[CHG] Attribute /org/bluez/hci0/dev_D0_AC_A5_BF_B7_52/service0018/char0019 Value:
+  01 0e 71 00 00 3e e9
 ```
 
-Run lsinput to list the input devices (disconnect any keyboards, etc.)
+This is the raw data streaming from the sensor. The format is defined here:
+[https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.cycling_speed_and_cadence.xml](https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.cycling_speed_and_cadence.xml)
+
+## Installation of the TrainerPi Software
+Just clone this repo into your Pi:
 
 ```
-lsinput
+git clone https://github.com/kloppen/trainerpi
 ```
 
-Now, 
+Now, create a virtualenv for use with trainerpi (optionally, you could install
+all the packages in your system python. Once we've created the virtualenv, we
+can install the required packages.
 
-Reference: http://blog.gegg.us/2017/01/setting-up-a-gpio-button-keyboard-on-a-raspberry-pi/
+```
+sudo pip3 install virtualenv
+cd ~/trainerpi
+virtualenv -p python3 trainerpi-ve
+source trainerpi-ve/bin/activate
+pip install -r requirements.txt
+```
+
+
+# Contributing
+TODO: Write this section
 
 
 # References
@@ -237,3 +223,5 @@ Reference: http://blog.gegg.us/2017/01/setting-up-a-gpio-button-keyboard-on-a-ra
 - https://www.jaredwolff.com/blog/get-started-with-bluetooth-low-energy/
 - https://www.spinics.net/lists/linux-bluetooth/msg66942.html
 - https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.cycling_speed_and_cadence.xml
+- http://www.powercurvesensor.com/cycling-trainer-power-curves/
+- https://scribles.net/auto-power-on-bluetooth-adapter-on-boot-up/
