@@ -67,10 +67,9 @@ class CSCTrainer(TrainerThread):
     async def worker(self):
         global SIGNAL_EXIT, display_data
 
-        display_data[(self.display_row, 0)] = display_column("Waiting for Sensor:", self.address)
+        display_data[(self.display_row, 0)] = display_column("Connecting for Sensor:", self.address)
 
         sensor = bleCSC.CSCSensor()
-        display_data[(self.display_row, 0)] = display_column("Created Sensor:", self.address)
         sensor.connect(self.address, self.handle_notification)
         display_data[(self.display_row, 0)] = display_column("Connected to Sensor:", self.address)
         await asyncio.sleep(0.0)
@@ -118,7 +117,7 @@ class ScreenUpdateTrainer(TrainerThread):
                     self.draw_segment(seg, seg_data.title, seg_data.data, (255, 255, 255))
 
             pygame.display.flip()
-            asyncio.sleep(SCREEN_UPDATE_DELAY)
+            await asyncio.sleep(SCREEN_UPDATE_DELAY)
 
     def draw_segment(self, seg: tuple, title: str, data: str, color: tuple):
         seg_width = WIDTH // 2
