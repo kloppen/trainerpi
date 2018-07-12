@@ -23,13 +23,20 @@ CSC_SENSOR_ADDRESSES = (
 
 
 display_column = collections.namedtuple("display_column", ("title", "data"))
+display_data = {
+    (0, 0): None,
+    (0, 1): None,
+    (1, 0): None,
+    (1, 1): None,
+    (2, 0): None,
+    (2, 1): None
+}
 SIGNAL_EXIT = False
 
 
 class TrainerThread:
     def __init__(self):
         self.display_row = None
-        self.display_column_list = []
 
 
 class CSCTrainer(TrainerThread):
@@ -40,44 +47,40 @@ class CSCTrainer(TrainerThread):
         self._location = ""
 
     def handle_notification(self, wheel_speed: float, crank_speed: float) -> None:
+        global display_data
+
         speed = wheel_speed * 3600. * ROLLING_LENGTH / 1e+6
         power = numpy.interp(speed, POWER_CURVE[:, 0], POWER_CURVE[:, 1])
         if "Wheel" in self._location:
-            self.display_column_list = [
-                display_column(
-                    self._location,
-                    "{:2.0f} km/h".format(
-                        wheel_speed * 3600. * ROLLING_LENGTH / 1e+6
-                    )
-                ),
-                display_column(
-                    "",
-                    "{:3.0f} W".format(power)
+            display_data[(self.display_row, 0)] = display_column(
+                self._location,
+                "{:2.0f} km/h".format(
+                    wheel_speed * 3600. * ROLLING_LENGTH / 1e+6
                 )
-            ]
+            )
+            display_data[(self.display_row, 1)] = display_column(
+                "",
+                "{:3.0f} W".format(power)
+            )
 
         if "Crank" in self._location:
-            self.display_column_list= [
-                display_column(
-                    self._location,
-                    "{:3.0f} RPM".format(
-                        crank_speed * 60.
-                    )
+            display_data[(self.display_row, 0)] = display_column(
+                self._location,
+                "{:3.0f} RPM".format(
+                    crank_speed * 60.
                 )
-            ]
+            )
 
     async def worker(self):
-        global SIGNAL_EXIT
+        global SIGNAL_EXIT, display_data
 
-        self.display_column_list = [
-            display_column("Waiting for Sensor:", self.address)
-        ]
+        display_data[(self.display_row, 0)] = display_column("Waiting for Sensor:", self.address)
 
         sensor = bleCSC.CSCSensor()
         sensor.connect(self.address, self.handle_notification)
-        await asyncio.sleep(0)
+        await asyncio.sleep(0.01)
         self._location = sensor.get_location()
-        await asyncio.sleep(0)
+        await asyncio.sleep(0.01)
         sensor.notifications(True)
         while True:
             if SIGNAL_EXIT:
@@ -87,9 +90,7 @@ class CSCTrainer(TrainerThread):
                 notify_ret = await sensor.wait_for_notifications(1.0)
                 if notify_ret:
                     continue
-                self.display_column_list = [
-                    display_column("Waiting for Sensor:", self.address)
-                ]
+                display_data[(self.display_row, 0)] = display_column("Waiting for Sensor:", self.address)
             except (KeyboardInterrupt, SystemExit):
                 break
 
@@ -106,7 +107,7 @@ class ScreenUpdateTrainer(TrainerThread):
         self.font = pygame.font.SysFont(FONT_NAME, FONT_SIZE)
 
     async def worker(self):
-        global SIGNAL_EXIT
+        global SIGNAL_EXIT, display_data
         while not SIGNAL_EXIT:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -116,10 +117,9 @@ class ScreenUpdateTrainer(TrainerThread):
 
             self.screen.fill((0, 0, 0))
 
-            for thread in self.thread_list:
-                if thread.display_row is not None:
-                    for col_num, col_data in enumerate(thread.display_column_list):
-                        self.draw_segment((col_num, thread.display_row), col_data.title, col_data.data, (255, 255, 255))
+            for seg, seg_data in display_data.items():
+                if seg_data is not None:
+                    self.draw_segment(seg, seg_data.title, seg_data.data, (255, 255, 255))
 
             pygame.display.flip()
             asyncio.sleep(SCREEN_UPDATE_DELAY)
@@ -127,10 +127,10 @@ class ScreenUpdateTrainer(TrainerThread):
     def draw_segment(self, seg: tuple, title: str, data: str, color: tuple):
         seg_width = WIDTH // 2
         seg_height = HEIGHT // 3
-        x0 = seg_width * seg[0] + BORDER
-        y0 = seg_height * seg[1] + BORDER
-        x1 = seg_width * (seg[0] + 1) - BORDER
-        y1 = seg_height * (seg[1] + 1) - BORDER
+        x0 = seg_width * seg[1] + BORDER
+        y0 = seg_height * seg[0] + BORDER
+        x1 = seg_width * (seg[1] + 1) - BORDER
+        y1 = seg_height * (seg[0] + 1) - BORDER
 
         title_text = self.font.render(title, True, color)
         self.screen.blit(title_text, (x0, y0))
