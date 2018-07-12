@@ -23,14 +23,7 @@ CSC_SENSOR_ADDRESSES = (
 
 
 display_column = collections.namedtuple("display_column", ("title", "data"))
-display_data = {
-    (0, 0): None,
-    (0, 1): None,
-    (1, 0): None,
-    (1, 1): None,
-    (2, 0): None,
-    (2, 1): None
-}
+display_data = {}
 SIGNAL_EXIT = False
 
 
@@ -77,16 +70,19 @@ class CSCTrainer(TrainerThread):
         display_data[(self.display_row, 0)] = display_column("Waiting for Sensor:", self.address)
 
         sensor = bleCSC.CSCSensor()
+        display_data[(self.display_row, 0)] = display_column("Created Sensor:", self.address)
         sensor.connect(self.address, self.handle_notification)
-        await asyncio.sleep(0.01)
+        display_data[(self.display_row, 0)] = display_column("Connected to Sensor:", self.address)
+        await asyncio.sleep(0.0)
         self._location = sensor.get_location()
-        await asyncio.sleep(0.01)
+        display_data[(self.display_row, 0)] = display_column("Got Location:", self.address)
+        await asyncio.sleep(0.0)
         sensor.notifications(True)
         while True:
             if SIGNAL_EXIT:
                 break
             try:
-                await asyncio.sleep(0.01)
+                await asyncio.sleep(0.0)
                 notify_ret = await sensor.wait_for_notifications(1.0)
                 if notify_ret:
                     continue
