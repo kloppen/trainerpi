@@ -1,9 +1,10 @@
-import bleCSC
-import numpy
 import asyncio
-import pygame
-import os
+import bleCSC
 import collections
+import numpy
+import os
+import pygame
+import time
 
 
 # --------------------------------------------------------------------------- #
@@ -38,9 +39,12 @@ class CSCTrainer(TrainerThread):
         self.address = address
         self.display_row = display_row
         self._location = ""
+        self.should_activity_timer_run = False  # Should the activity timer be running?
 
     def handle_notification(self, wheel_speed: float, crank_speed: float) -> None:
         global display_data
+
+        self.should_activity_timer_run = wheel_speed > 0 or crank_speed > 0
 
         speed = wheel_speed * 3600. * ROLLING_LENGTH / 1e+6
         power = numpy.interp(speed, POWER_CURVE[:, 0], POWER_CURVE[:, 1])
@@ -77,17 +81,45 @@ class CSCTrainer(TrainerThread):
         display_data[(self.display_row, 0)] = display_column("Waiting for Data:", self.address)
         await asyncio.sleep(0.0)
         sensor.notifications(True)
-        while True:
-            if SIGNAL_EXIT:
-                break
-            try:
+        while not SIGNAL_EXIT:
+            try:  # TODO: Remove this try??
                 await asyncio.sleep(0.0)
                 notify_ret = await sensor.wait_for_notifications(1.0)
                 if notify_ret:
                     continue
                 display_data[(self.display_row, 0)] = display_column("Waiting for Sensor:", self.address)
+                self.should_activity_timer_run = False
             except (KeyboardInterrupt, SystemExit):
                 break
+
+
+class ActivityTimer(TrainerThread):
+    def __init__(self, monitor_threads: list, display_row: int):
+        super().__init__()
+        self.monitor_threads = monitor_threads
+        self.prev_accumulated_time = 0
+        self.running = False
+        self.start_time = 0
+        self.display_row = display_row
+
+    async def worker(self):
+        global SIGNAL_EXIT, display_data
+        while not SIGNAL_EXIT:
+            if any([t.should_activity_timer_run for t in self.monitor_threads]):  # Timer should be running
+                time_to_display = self.prev_accumulated_time + time.time() - self.start_time
+                if not self.running:
+                    self.start_time = time.time()
+                    self.running = True
+            else:  # Timer should not be running
+                if self.running:  # Timer needs to stop
+                    self.prev_accumulated_time += time.time() - self.start_time
+                    self.running = False
+                time_to_display = self.prev_accumulated_time
+            display_data[(self.display_row, 0)] = display_column(
+                "Activity Time",
+                time.strftime("%H:%M:%S", time.gmtime(time_to_display))
+            )
+            await asyncio.sleep(SCREEN_UPDATE_DELAY)
 
 
 class ScreenUpdateTrainer(TrainerThread):
@@ -135,12 +167,12 @@ class ScreenUpdateTrainer(TrainerThread):
 
 
 def run_trainer():
-    all_threads = list(
+    csc_threads = list(
         [CSCTrainer(address, i + 1) for (i, address) in enumerate(CSC_SENSOR_ADDRESSES)]
     )
+    all_threads = csc_threads.copy()
+    all_threads.append(ActivityTimer(csc_threads, 0))
     all_threads.append(ScreenUpdateTrainer(all_threads))
-
-    # TODO: Add a worker for the time
 
     io_loop = asyncio.get_event_loop()
     tasks = list(
