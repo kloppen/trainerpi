@@ -106,10 +106,12 @@ class ActivityTimer(TrainerThread):
         global SIGNAL_EXIT, display_data
         while not SIGNAL_EXIT:
             if any([t.should_activity_timer_run for t in self.monitor_threads]):  # Timer should be running
-                time_to_display = self.prev_accumulated_time + time.time() - self.start_time
                 if not self.running:
                     self.start_time = time.time()
                     self.running = True
+                    time_to_display = self.prev_accumulated_time
+                else:
+                    time_to_display = self.prev_accumulated_time + time.time() - self.start_time
             else:  # Timer should not be running
                 if self.running:  # Timer needs to stop
                     self.prev_accumulated_time += time.time() - self.start_time
