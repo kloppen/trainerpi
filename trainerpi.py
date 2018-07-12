@@ -16,7 +16,7 @@ SCREEN_SIZE = WIDTH, HEIGHT = 320, 240
 BORDER = 10
 FONT_NAME = "DejaVuSans"
 FONT_SIZE = 28
-SCREEN_UPDATE_DELAY = 0.5
+SCREEN_UPDATE_DELAY = 0.05  # Display update should be fast for the timer to "look" right
 CSC_SENSOR_ADDRESSES = (
     "D0:AC:A5:BF:B7:52",
     "C6:F9:84:6A:C0:8E"
@@ -82,15 +82,12 @@ class CSCTrainer(TrainerThread):
         await asyncio.sleep(0.0)
         sensor.notifications(True)
         while not SIGNAL_EXIT:
-            try:  # TODO: Remove this try??
-                await asyncio.sleep(0.0)
-                notify_ret = await sensor.wait_for_notifications(1.0)
-                if notify_ret:
-                    continue
-                display_data[(self.display_row, 0)] = display_column("Waiting for Sensor:", self.address)
-                self.should_activity_timer_run = False
-            except (KeyboardInterrupt, SystemExit):
-                break
+            await asyncio.sleep(0.0)
+            notify_ret = await sensor.wait_for_notifications(1.0)
+            if notify_ret:
+                continue
+            display_data[(self.display_row, 0)] = display_column("Waiting for Sensor:", self.address)
+            self.should_activity_timer_run = False
 
 
 class ActivityTimer(TrainerThread):
