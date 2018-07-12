@@ -71,10 +71,10 @@ class CSCTrainer(TrainerThread):
 
         sensor = bleCSC.CSCSensor()
         sensor.connect(self.address, self.handle_notification)
-        display_data[(self.display_row, 0)] = display_column("Connected to Sensor:", self.address)
+        display_data[(self.display_row, 0)] = display_column("Waiting for Loc'n:", self.address)
         await asyncio.sleep(0.0)
         self._location = sensor.get_location()
-        display_data[(self.display_row, 0)] = display_column("Got Location:", self.address)
+        display_data[(self.display_row, 0)] = display_column("Waiting for Data:", self.address)
         await asyncio.sleep(0.0)
         sensor.notifications(True)
         while True:
