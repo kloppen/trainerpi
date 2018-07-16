@@ -40,6 +40,7 @@ class CSCMeasurement:
             self.crank_event_time = data[2]
 
 
+# TODO: Remove?
 def meas_difference(t1: int, t2: int, bits: int) -> float:
     """
     Determines the difference between two measurements
@@ -54,42 +55,81 @@ def meas_difference(t1: int, t2: int, bits: int) -> float:
     return t2 - t1
 
 
-AVERAGE_LENGTH = 10
+class SpeedAveragingSegment:
+    """
+    This class is used for speed averaging. Each "segment" is the period between subsequent changes in the rotation
+    count provided by the sensor.
+
+    A window is a period of time that contains part or all of one or more segment.
+    """
+    def __init__(self, t_start: float, n_start: int):
+        self.t_start = t_start
+        self.t_end = None
+        self.n_start = n_start
+        self.n_end = None
+
+    def set_finish(self, t_end, n_end):
+        self.t_end = t_end
+        self.n_end = n_end
+
+    @property
+    def t_total(self) -> float:
+        return self.t_end - self.t_start
+
+    @property
+    def rotation_speed(self) -> float:
+        return (self.n_end - self.n_start) / (self.t_end - self.t_start)
+
+    def time_within_window(self, window_start: float, window_end: float) -> float:
+        if self.rotation_speed is None:
+            return 0.  # The segment is not yet complete
+        return min(window_end, self.t_end) - max(window_start, self.t_start)
+
+
+AVERAGING_TIME = 3.
+
+
+class SpeedAverager:
+    def __init__(self):
+        self.speed_segments = []
+        self.cur_speed_segment = None
+
+    def update_average(self, cur_t: float, cur_n: int) -> float:
+        if self.cur_speed_segment is None:
+            self.cur_speed_segment = SpeedAveragingSegment(cur_t, cur_n)
+
+        if self.cur_speed_segment.n_start != cur_n:
+            self.cur_speed_segment.set_finish(cur_t, cur_n)
+            self.speed_segments.append(self.cur_speed_segment)
+            self.cur_speed_segment = SpeedAveragingSegment(cur_t, cur_n)
+
+            self.cur_speed_segment = list([ss for ss in self.speed_segments if ss.t_end >= cur_t - AVERAGING_TIME])
+
+            t_window = sum([s.time_within_window(cur_t - AVERAGING_TIME, cur_t) for s in self.speed_segments])
+            if t_window > 0:
+                return sum([s.time_within_window(cur_t - AVERAGING_TIME, cur_t) * s.rotation_speed
+                            for s in self.speed_segments if s.rotation_speed is not None]) / t_window
+            return 0.  # The window contains no completed segments
 
 
 class CSCDelegate(DefaultDelegate):
     def __init__(self):
         DefaultDelegate.__init__(self)
-        self._prev_meas = collections.deque(maxlen=AVERAGE_LENGTH)
-        self._last_measurement = None
         self.notification_callback = None
+        self.average_wheel = SpeedAverager()
+        self.average_crank = SpeedAverager()
 
     def handleNotification(self, cHandle, data):
         meas = CSCMeasurement()
         meas.from_bytes(data)
-        if self._last_measurement is not None:
-            meas_diff = CSCMeasurement()
-            meas_diff.crank_revolution_data_present = meas.crank_revolution_data_present
-            meas_diff.wheel_revolution_data_present = meas.wheel_revolution_data_present
-            meas_diff.wheel_revs = meas_difference(self._last_measurement.wheel_revs, meas.wheel_revs, 32)
-            meas_diff.crank_revs = meas_difference(self._last_measurement.crank_revs, meas.crank_revs, 16)
-            meas_diff.wheel_event_time = meas_difference(self._last_measurement.wheel_event_time,
-                                                         meas.wheel_event_time,
-                                                         16) / 1024
-            meas_diff.crank_event_time = meas_difference(self._last_measurement.wheel_event_time,
-                                                         meas.crank_event_time,
-                                                         16) / 1024
-            meas_diff.time = meas.time - self._last_measurement.time
-            self._prev_meas.append(meas_diff)
-        self._last_measurement = meas
 
-        if len(self._prev_meas) > 2:
-            if meas.wheel_revolution_data_present:
-                avg = sum([m.wheel_revs for m in self._prev_meas]) / sum([m.time for m in self._prev_meas])
-                self.notification_callback(avg, 0.)
-            if meas.crank_revolution_data_present:
-                avg = sum([m.crank_revs for m in self._prev_meas]) / sum([m.time for m in self._prev_meas])
-                self.notification_callback(0., avg)
+        if meas.crank_revolution_data_present:
+            crank_speed = self.average_crank.update_average(meas.crank_event_time / 1024, meas.crank_revs)
+            self.notification_callback(0., crank_speed)
+
+        if meas.wheel_revolution_data_present:
+            wheel_speed = self.average_wheel.update_average(meas.wheel_event_time / 1024, meas.wheel_revs)
+            self.notification_callback(wheel_speed, 0.)
 
 
 CSC_SERVICE_UUID = UUID(0x1816)
@@ -109,7 +149,7 @@ class CSCSensor:
         self.cscCharacteristicHandle = None
 
     def connect(self, address: str,
-                      notification_callback: Callable[[float, float], None]):
+                notification_callback: Callable[[float, float], None]):
         """
         Initializes the class
         :param address: A string with the address of the sensor
