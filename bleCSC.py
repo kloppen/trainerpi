@@ -75,7 +75,8 @@ class SpeedAverager:
         """
         This class provides the ability to average speed over a certain averaging window.
 
-        Since the bluetooth CSC sensors provide integers for
+        Since the bluetooth CSC sensors provide integers for time and the number of rotations, and these integers
+        are of finite width, we need to account for overflow (in which case, the sensor simply wraps around zero)
 
         :param ticks_per_second: The number of ticks of the timer counter per second (1024, normally)
         :param bits_t: The number of bits that represents time
@@ -92,12 +93,14 @@ class SpeedAverager:
         # could be and wrap as necessary
         self.min_t_ticks = None
         self.min_n = None
+        self.starting_n = None
 
-    def update_average(self, cur_t_ticks: int, cur_n: int) -> float:
+    def update_average(self, cur_t_ticks: int, cur_n: int) -> tuple:
         if self.cur_speed_segment is None:
             self.cur_speed_segment = SpeedAveragingSegment(cur_t_ticks, cur_n)
             self.min_t_ticks = cur_t_ticks
             self.min_n = cur_n
+            self.starting_n = cur_n
 
         if self.cur_speed_segment.n_start != cur_n:
             while cur_t_ticks < self.min_t_ticks:
@@ -121,11 +124,13 @@ class SpeedAverager:
                  for s in self.speed_segments]
             ) / self.ticks_per_second
             if ticks_window > 0:
-                return sum(
+                rotation_speed = sum(
                     [s.ticks_within_window(cur_t_ticks - self.averaging_window * self.ticks_per_second, cur_t_ticks) *
                      s.rotation_speed
                      for s in self.speed_segments if s.rotation_speed is not None]) / ticks_window
-            return 0.  # The window contains no completed segments
+                n_rotations = cur_n - self.starting_n
+                return rotation_speed, n_rotations
+            return 0., 0  # The window contains no completed segments
 
 
 class CSCDelegate(DefaultDelegate):
@@ -135,17 +140,17 @@ class CSCDelegate(DefaultDelegate):
         self.average_wheel = SpeedAverager(ticks_per_second=1024, averaging_window=3., bits_t=16, bits_n=32)
         self.average_crank = SpeedAverager(ticks_per_second=1024, averaging_window=3., bits_t=16, bits_n=16)
 
-    def handleNotification(self, cHandle, data):
+    def handleNotification(self, c_handle, data):
         meas = CSCMeasurement()
         meas.from_bytes(data)
 
         if meas.crank_revolution_data_present:
-            crank_speed = self.average_crank.update_average(meas.crank_event_time, meas.crank_revs)
-            self.notification_callback(0., crank_speed)
+            crank_speed, n_rotations = self.average_crank.update_average(meas.crank_event_time, meas.crank_revs)
+            self.notification_callback(0., crank_speed, n_rotations)
 
         if meas.wheel_revolution_data_present:
-            wheel_speed = self.average_wheel.update_average(meas.wheel_event_time, meas.wheel_revs)
-            self.notification_callback(wheel_speed, 0.)
+            wheel_speed, n_rotations = self.average_wheel.update_average(meas.wheel_event_time, meas.wheel_revs)
+            self.notification_callback(wheel_speed, 0., n_rotations)
 
 
 CSC_SERVICE_UUID = UUID(0x1816)
@@ -165,7 +170,7 @@ class CSCSensor:
         self.cscCharacteristicHandle = None
 
     def connect(self, address: str,
-                notification_callback: Callable[[float, float], None]):
+                notification_callback: Callable[[float, float, int], None]):
         """
         Initializes the class
         :param address: A string with the address of the sensor
