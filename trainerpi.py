@@ -44,11 +44,13 @@ class CSCTrainer(TrainerThread):
     def handle_notification(self, wheel_speed: float, crank_speed: float) -> None:
         global display_data
 
-        self.should_activity_timer_run = wheel_speed > 0 or crank_speed > 0
+        self.should_activity_timer_run = (wheel_speed is not None and wheel_speed > 0) or\
+                                         (crank_speed is not None and crank_speed > 0)
 
-        speed = wheel_speed * 3600. * ROLLING_LENGTH / 1e+6
-        power = numpy.interp(speed, POWER_CURVE[:, 0], POWER_CURVE[:, 1])
-        if "Wheel" in self._location:
+        if "Wheel" in self._location and wheel_speed is not None:
+            speed = wheel_speed * 3600. * ROLLING_LENGTH / 1e+6
+            power = numpy.interp(speed, POWER_CURVE[:, 0], POWER_CURVE[:, 1])
+
             display_data[(self.display_row, 0)] = display_column(
                 self._location,
                 "{:2.0f} km/h".format(
@@ -60,7 +62,7 @@ class CSCTrainer(TrainerThread):
                 "{:3.0f} W".format(power)
             )
 
-        if "Crank" in self._location:
+        if "Crank" in self._location and crank_speed is not None:
             display_data[(self.display_row, 0)] = display_column(
                 self._location,
                 "{:3.0f} RPM".format(
