@@ -113,7 +113,7 @@ class SpeedAverager:
             self.speed_segments.append(self.cur_speed_segment)
             self.cur_speed_segment = SpeedAveragingSegment(cur_t_ticks, cur_n)
 
-            self.cur_speed_segment = list(
+            self.speed_segments = list(
                 [ss for ss in self.speed_segments
                  if ss.t_end_ticks >= cur_t_ticks / self.ticks_per_second - self.averaging_window
                  ])
