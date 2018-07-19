@@ -64,9 +64,9 @@ class SpeedAveragingSegment:
     def rotation_speed(self) -> float:
         return (self.n_end - self.n_start) / (self.t_end_ticks - self.t_start_ticks)
 
-    def ticks_within_window(self, window_start: float, window_end: float) -> float:
+    def ticks_within_window(self, window_start: int, window_end: int) -> int:
         if self.rotation_speed is None:
-            return 0.  # The segment is not yet complete
+            return 0  # The segment is not yet complete
         return min(window_end, self.t_end_ticks) - max(window_start, self.t_start_ticks)
 
 
@@ -99,35 +99,39 @@ class SpeedAverager:
             self.min_t_ticks = cur_t_ticks
             self.min_n = cur_n
 
+        averaging_window_ticks = self.averaging_window * self.ticks_per_second
+
+        while cur_t_ticks < self.min_t_ticks:
+            cur_t_ticks += 2 ** self.bits_t
+
+        while cur_n < self.min_n:
+            cur_n += 2 ** self.bits_n
+
+        self.min_t_ticks = cur_t_ticks
+        self.min_n = cur_n
+
         if self.cur_speed_segment.n_start != cur_n:
-            while cur_t_ticks < self.min_t_ticks:
-                cur_t_ticks += 2 ** self.bits_t
-
-            while cur_n < self.min_n:
-                cur_n += 2 ** self.bits_n
-
-            self.min_t_ticks = cur_t_ticks
-            self.min_n = cur_n
-
             self.cur_speed_segment.set_finish(cur_t_ticks, cur_n)
             self.speed_segments.append(self.cur_speed_segment)
             self.cur_speed_segment = SpeedAveragingSegment(cur_t_ticks, cur_n)
 
-            self.speed_segments = list(
-                [ss for ss in self.speed_segments
-                 if ss.t_end_ticks >= cur_t_ticks / self.ticks_per_second - self.averaging_window
-                 ])
+        self.speed_segments = list(
+            [ss for ss in self.speed_segments
+             if ss.t_end_ticks >= cur_t_ticks - averaging_window_ticks
+             ])
 
-            ticks_window = sum(
-                [s.ticks_within_window(cur_t_ticks - self.averaging_window * self.ticks_per_second, cur_t_ticks)
-                 for s in self.speed_segments]
-            ) / self.ticks_per_second
-            if ticks_window > 0:
-                return sum(
-                    [s.ticks_within_window(cur_t_ticks - self.averaging_window * self.ticks_per_second, cur_t_ticks) *
-                     s.rotation_speed
-                     for s in self.speed_segments if s.rotation_speed is not None]) / ticks_window
-            return 0.  # The window contains no completed segments
+        # Add up all the time in all the segments, but only consider segments that are complete
+        ticks_window = sum(
+            [s.ticks_within_window(cur_t_ticks - averaging_window_ticks, cur_t_ticks)
+             for s in self.speed_segments if s.rotation_speed is not None]
+        )
+        if ticks_window > 0:
+            speed = sum(
+                [s.ticks_within_window(cur_t_ticks - averaging_window_ticks, cur_t_ticks) * s.rotation_speed
+                 for s in self.speed_segments if s.rotation_speed is not None]
+            ) / (ticks_window / self.ticks_per_second)
+            return speed
+        return 0.  # The window contains no completed segments
 
 
 class CSCDelegate(DefaultDelegate):
