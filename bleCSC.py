@@ -65,7 +65,7 @@ class SpeedAveragingSegment:
         return (self.n_end - self.n_start) / (self.t_end_ticks - self.t_start_ticks)
 
     def ticks_within_window(self, window_start: int, window_end: int) -> int:
-        if self.rotation_speed is None:
+        if self.t_end_ticks is None:
             return 0  # The segment is not yet complete
         return min(window_end, self.t_end_ticks) - max(window_start, self.t_start_ticks)
 
@@ -99,7 +99,7 @@ class SpeedAverager:
             self.min_t_ticks = cur_t_ticks
             self.min_n = cur_n
 
-        averaging_window_ticks = self.averaging_window * self.ticks_per_second
+        window_ticks = self.averaging_window * self.ticks_per_second
 
         while cur_t_ticks < self.min_t_ticks:
             cur_t_ticks += 2 ** self.bits_t
@@ -110,24 +110,24 @@ class SpeedAverager:
         self.min_t_ticks = cur_t_ticks
         self.min_n = cur_n
 
-        if self.cur_speed_segment.n_start != cur_n:
+        if self.cur_speed_segment.n_start != cur_n or self.cur_speed_segment.t_start_ticks < cur_t_ticks - window_ticks:
             self.cur_speed_segment.set_finish(cur_t_ticks, cur_n)
             self.speed_segments.append(self.cur_speed_segment)
             self.cur_speed_segment = SpeedAveragingSegment(cur_t_ticks, cur_n)
 
         self.speed_segments = list(
             [ss for ss in self.speed_segments
-             if ss.t_end_ticks >= cur_t_ticks - averaging_window_ticks
+             if ss.t_end_ticks is None or ss.t_end_ticks >= cur_t_ticks - window_ticks
              ])
 
         # Add up all the time in all the segments, but only consider segments that are complete
         ticks_window = sum(
-            [s.ticks_within_window(cur_t_ticks - averaging_window_ticks, cur_t_ticks)
+            [s.ticks_within_window(cur_t_ticks - window_ticks, cur_t_ticks)
              for s in self.speed_segments if s.rotation_speed is not None]
         )
         if ticks_window > 0:
             speed = sum(
-                [s.ticks_within_window(cur_t_ticks - averaging_window_ticks, cur_t_ticks) * s.rotation_speed
+                [s.ticks_within_window(cur_t_ticks - window_ticks, cur_t_ticks) * s.rotation_speed
                  for s in self.speed_segments if s.rotation_speed is not None]
             ) / (ticks_window / self.ticks_per_second)
             return speed
