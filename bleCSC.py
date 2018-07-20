@@ -39,35 +39,21 @@ class CSCMeasurement:
             self.crank_event_time = data[2]
 
 
-class SpeedAveragingSegment:
+class Measurement:
     """
-    This class is used for speed averaging. Each "segment" is the period between subsequent changes in the rotation
-    count provided by the sensor.
-
-    A window is a period of time that contains part or all of one or more segment.
+    This class is used for speed averaging. Each "measurement" is the period between subsequent "events." That is, it's
+    the period between times when the CSC sensor reports new "last event time."
     """
-    def __init__(self, t_start_ticks: int, n_start: int):
-        self.t_start_ticks = t_start_ticks
-        self.t_end_ticks = None
-        self.n_start = n_start
-        self.n_end = None
+    def __init__(self, start_t_ticks: int, start_n: int, start_real_t: float):
+        self.start_t_ticks = start_t_ticks
+        self.start_n = start_n
+        self.start_real_t = start_real_t
+        self.end_t_ticks = None
+        self.end_n = None
 
-    def set_finish(self, t_end_ticks, n_end):
-        self.t_end_ticks = t_end_ticks
-        self.n_end = n_end
-
-    @property
-    def ticks_total(self) -> float:
-        return self.t_end_ticks - self.t_start_ticks
-
-    @property
-    def rotation_speed(self) -> float:
-        return (self.n_end - self.n_start) / (self.t_end_ticks - self.t_start_ticks)
-
-    def ticks_within_window(self, window_start: int, window_end: int) -> int:
-        if self.t_end_ticks is None:
-            return 0  # The segment is not yet complete
-        return min(window_end, self.t_end_ticks) - max(window_start, self.t_start_ticks)
+    def set_end(self, end_t_ticks: int, end_n: int):
+        self.end_t_ticks = end_t_ticks
+        self.end_n = end_n
 
 
 class SpeedAverager:
@@ -82,56 +68,48 @@ class SpeedAverager:
         :param bits_n: The number of bits that represents rotations
         :param averaging_window: The time over which to average the speed
         """
-        self.speed_segments = []
-        self.cur_speed_segment = None
+        self.measurements = []
+        self.cur_measurement = None
         self.ticks_per_second = ticks_per_second
         self.averaging_window = averaging_window
         self.bits_t = bits_t
         self.bits_n = bits_n
         # Since the time and number of revolutions wraps around zero, we will store the smallest numbers that these
         # could be and wrap as necessary
-        self.min_t_ticks = None
-        self.min_n = None
+        self.prev_le_t_ticks = None
+        self.prev_le_n = None
 
-    def update_average(self, cur_t_ticks: int, cur_n: int) -> float:
-        if self.cur_speed_segment is None:
-            self.cur_speed_segment = SpeedAveragingSegment(cur_t_ticks, cur_n)
-            self.min_t_ticks = cur_t_ticks
-            self.min_n = cur_n
+    def add_measurement(self, last_event_t_ticks: int, last_event_n: int) -> None:
+        if self.cur_measurement is None:
+            self.cur_measurement = Measurement(last_event_t_ticks, last_event_n, time.time())
+            self.prev_le_t_ticks = last_event_t_ticks
+            self.prev_le_n = last_event_n
 
-        window_ticks = self.averaging_window * self.ticks_per_second
+        while last_event_t_ticks < self.prev_le_t_ticks:
+            last_event_t_ticks += 2 ** self.bits_t
 
-        while cur_t_ticks < self.min_t_ticks:
-            cur_t_ticks += 2 ** self.bits_t
+        while last_event_n < self.prev_le_n:
+            last_event_n += 2 ** self.bits_n
 
-        while cur_n < self.min_n:
-            cur_n += 2 ** self.bits_n
+        self.prev_le_t_ticks = last_event_t_ticks
+        self.prev_le_n = last_event_n
 
-        self.min_t_ticks = cur_t_ticks
-        self.min_n = cur_n
+        if self.cur_measurement.start_t_ticks != last_event_t_ticks:
+            self.cur_measurement.set_end(last_event_t_ticks, last_event_n)
+            self.measurements.append(self.cur_measurement)
+            self.cur_measurement = Measurement(last_event_t_ticks, last_event_n, time.time())
 
-        if self.cur_speed_segment.n_start != cur_n or self.cur_speed_segment.t_start_ticks < cur_t_ticks - window_ticks:
-            self.cur_speed_segment.set_finish(cur_t_ticks, cur_n)
-            self.speed_segments.append(self.cur_speed_segment)
-            self.cur_speed_segment = SpeedAveragingSegment(cur_t_ticks, cur_n)
+    def get_average(self) -> float:
+        self.measurements = list([
+            meas for meas in self.measurements if meas.start_real_t >= time.time() - self.averaging_window
+        ])
 
-        self.speed_segments = list(
-            [ss for ss in self.speed_segments
-             if ss.t_end_ticks is None or ss.t_end_ticks >= cur_t_ticks - window_ticks
-             ])
+        t_window = sum([meas.end_t_ticks - meas.start_t_ticks for meas in self.measurements])
 
-        # Add up all the time in all the segments, but only consider segments that are complete
-        ticks_window = sum(
-            [s.ticks_within_window(cur_t_ticks - window_ticks, cur_t_ticks)
-             for s in self.speed_segments if s.rotation_speed is not None]
-        )
-        if ticks_window > 0:
-            speed = sum(
-                [s.ticks_within_window(cur_t_ticks - window_ticks, cur_t_ticks) * s.rotation_speed
-                 for s in self.speed_segments if s.rotation_speed is not None]
-            ) / (ticks_window / self.ticks_per_second)
-            return speed
-        return 0.  # The window contains no completed segments
+        if t_window > 0:
+            n_window = sum([meas.end_n - meas.start_n for meas in self.measurements])
+            return n_window / (t_window / self.ticks_per_second)
+        return 0.
 
 
 class CSCDelegate(DefaultDelegate):
@@ -139,18 +117,20 @@ class CSCDelegate(DefaultDelegate):
         DefaultDelegate.__init__(self)
         self.notification_callback = None
         self.average_wheel = SpeedAverager(ticks_per_second=1024, averaging_window=3., bits_t=16, bits_n=32)
-        self.average_crank = SpeedAverager(ticks_per_second=1024, averaging_window=3., bits_t=16, bits_n=16)
+        self.average_crank = SpeedAverager(ticks_per_second=1024, averaging_window=5., bits_t=16, bits_n=16)
 
-    def handleNotification(self, cHandle, data):
+    def handleNotification(self, c_handle, data):
         meas = CSCMeasurement()
         meas.from_bytes(data)
 
         if meas.crank_revolution_data_present:
-            crank_speed = self.average_crank.update_average(meas.crank_event_time, meas.crank_revs)
+            self.average_crank.add_measurement(meas.crank_event_time, meas.crank_revs)
+            crank_speed = self.average_crank.get_average()
             self.notification_callback(0., crank_speed)
 
         if meas.wheel_revolution_data_present:
-            wheel_speed = self.average_wheel.update_average(meas.wheel_event_time, meas.wheel_revs)
+            self.average_wheel.add_measurement(meas.wheel_event_time, meas.wheel_revs)
+            wheel_speed = self.average_wheel.get_average()
             self.notification_callback(wheel_speed, 0.)
 
 
