@@ -41,7 +41,7 @@ class CSCTrainer(TrainerThread):
         self._location = ""
         self.should_activity_timer_run = False  # Should the activity timer be running?
 
-    def handle_notification(self, wheel_speed: float, crank_speed: float, wheel_rotations: int) -> None:
+    def handle_notification(self, wheel_speed: float, crank_speed: float, cumulative_rotations: int) -> None:
         global display_data
 
         self.should_activity_timer_run = (wheel_speed is not None and wheel_speed > 0) or\
@@ -58,7 +58,7 @@ class CSCTrainer(TrainerThread):
                 )
             )
             display_data[(self.display_row, 1)] = display_column(
-                "{:6.2f} km".format(wheel_rotations * ROLLING_LENGTH / 1e+6),
+                "{:6.2f} km".format(cumulative_rotations * ROLLING_LENGTH / 1e+6),
                 "{:3.0f} W".format(power)
             )
 

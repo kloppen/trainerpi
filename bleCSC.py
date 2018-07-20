@@ -71,6 +71,7 @@ class SpeedAverager:
         """
         self.measurements = []
         self.cur_measurement = None
+        self.cumulative_rotations = 0
         self.ticks_per_second = ticks_per_second
         self.averaging_window = averaging_window
         self.bits_t = bits_t
@@ -97,6 +98,7 @@ class SpeedAverager:
 
         if self.cur_measurement.start_t_ticks != last_event_t_ticks:
             self.cur_measurement.set_end(last_event_t_ticks, last_event_n)
+            self.cumulative_rotations += self.cur_measurement.end_n - self.cur_measurement.start_n
             self.measurements.append(self.cur_measurement)
             self.cur_measurement = Measurement(last_event_t_ticks, last_event_n, time.time())
 
@@ -118,7 +120,7 @@ class CSCDelegate(DefaultDelegate):
         DefaultDelegate.__init__(self)
         self.notification_callback = None
         self.average_wheel = SpeedAverager(ticks_per_second=1024, averaging_window=3., bits_t=16, bits_n=32)
-        self.average_crank = SpeedAverager(ticks_per_second=1024, averaging_window=5., bits_t=16, bits_n=16)
+        self.average_crank = SpeedAverager(ticks_per_second=1024, averaging_window=3., bits_t=16, bits_n=16)
 
     def handleNotification(self, c_handle, data):
         meas = CSCMeasurement()
@@ -127,12 +129,14 @@ class CSCDelegate(DefaultDelegate):
         if meas.crank_revolution_data_present:
             self.average_crank.add_measurement(meas.crank_event_time, meas.crank_revs)
             crank_speed = self.average_crank.get_average()
-            self.notification_callback(0., crank_speed)
+            cumulative_rotations = self.average_crank.cumulative_rotations
+            self.notification_callback(0., crank_speed, cumulative_rotations)
 
         if meas.wheel_revolution_data_present:
             self.average_wheel.add_measurement(meas.wheel_event_time, meas.wheel_revs)
             wheel_speed = self.average_wheel.get_average()
-            self.notification_callback(wheel_speed, 0.)
+            cumulative_rotations = self.average_wheel.cumulative_rotations
+            self.notification_callback(wheel_speed, 0., cumulative_rotations)
 
 
 CSC_SERVICE_UUID = UUID(0x1816)
