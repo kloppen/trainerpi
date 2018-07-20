@@ -44,11 +44,13 @@ class CSCTrainer(TrainerThread):
     def handle_notification(self, wheel_speed: float, crank_speed: float, wheel_rotations: int) -> None:
         global display_data
 
-        self.should_activity_timer_run = wheel_speed > 0 or crank_speed > 0
+        self.should_activity_timer_run = (wheel_speed is not None and wheel_speed > 0) or\
+                                         (crank_speed is not None and crank_speed > 0)
 
-        speed = wheel_speed * 3600. * ROLLING_LENGTH / 1e+6
-        power = numpy.interp(speed, POWER_CURVE[:, 0], POWER_CURVE[:, 1])
-        if "Wheel" in self._location:
+        if "Wheel" in self._location and wheel_speed is not None:
+            speed = wheel_speed * 3600. * ROLLING_LENGTH / 1e+6
+            power = numpy.interp(speed, POWER_CURVE[:, 0], POWER_CURVE[:, 1])
+
             display_data[(self.display_row, 0)] = display_column(
                 self._location,
                 "{:2.0f} km/h".format(
@@ -60,7 +62,7 @@ class CSCTrainer(TrainerThread):
                 "{:3.0f} W".format(power)
             )
 
-        if "Crank" in self._location:
+        if "Crank" in self._location and crank_speed is not None:
             display_data[(self.display_row, 0)] = display_column(
                 self._location,
                 "{:3.0f} RPM".format(
@@ -125,29 +127,40 @@ class ScreenUpdateTrainer(TrainerThread):
     def __init__(self, thread_list):
         super().__init__()
         self.thread_list = thread_list
-        os.putenv("SDL_FBDEV", "/dev/fb1")
-        pygame.init()
-        pygame.mouse.set_visible(False)
-        self.screen = pygame.display.set_mode(SCREEN_SIZE)
-        self.clock = pygame.time.Clock()
-        self.font = pygame.font.SysFont(FONT_NAME, FONT_SIZE)
+        self.use_pygame = True
+
+        try:
+            os.putenv("SDL_FBDEV", "/dev/fb1")
+            pygame.init()
+            pygame.mouse.set_visible(False)
+            self.screen = pygame.display.set_mode(SCREEN_SIZE)
+            self.clock = pygame.time.Clock()
+            self.font = pygame.font.SysFont(FONT_NAME, FONT_SIZE)
+        except pygame.error:
+            self.use_pygame = False
 
     async def worker(self):
         global SIGNAL_EXIT, display_data
         while not SIGNAL_EXIT:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    SIGNAL_EXIT = True
-                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                    SIGNAL_EXIT = True
+            if self.use_pygame:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        SIGNAL_EXIT = True
+                    if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                        SIGNAL_EXIT = True
 
-            self.screen.fill((0, 0, 0))
+                self.screen.fill((0, 0, 0))
 
-            for seg, seg_data in display_data.items():
-                if seg_data is not None:
-                    self.draw_segment(seg, seg_data.title, seg_data.data, (255, 255, 255))
+                for seg, seg_data in display_data.items():
+                    if seg_data is not None:
+                        self.draw_segment(seg, seg_data.title, seg_data.data, (255, 255, 255))
 
-            pygame.display.flip()
+                pygame.display.flip()
+            else:
+                for seg, seg_data in display_data.items():
+                    if seg_data is not None:
+                        print("{}\t{}\t{}".format(seg, seg_data.title, seg_data.data))
+
             await asyncio.sleep(SCREEN_UPDATE_DELAY)
 
     def draw_segment(self, seg: tuple, title: str, data: str, color: tuple):

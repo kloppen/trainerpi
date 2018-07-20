@@ -4,5 +4,5 @@
 bluetoothctl power on
 
 # Launch the script, assuming that there is a virtualenv named trainerpi-ve
-trainerpi-vi/bin/python trainerpi.py
+trainerpi-ve/bin/python trainerpi.py
 
