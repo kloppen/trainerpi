@@ -1,5 +1,5 @@
 # Introduction
-This project provides a simple interface to bluetooth speed and cadence sensors
+This project provides a simple interface to Bluetooth speed and cadence sensors
 that you can use with your bike. It's intended for use when your bike is on a
 trainer. Using power curves published
 [here](http://www.powercurvesensor.com/cycling-trainer-power-curves/), it
@@ -9,11 +9,17 @@ This README provides an outline of the installation and use of the `trainerpi`
 software in this repository. It assumes a basic understanding of Linux, git and
 Raspberry Pi.
 
-TODO: Insert some photos
+![Image of The TrainerPi, Mounted on a Bike Stem](Screen.jpg)
 
 # Bill of Materials
-TODO: Complete the BOM
-PiTFT Plus LCD/Touchscreen [https://learn.adafruit.com/running-opengl-based-games-and-emulators-on-adafruit-pitft-displays/pitft-setup]
+I used the following items for this project:
+
+- [Raspberry Pi 3B](https://www.raspberrypi.org/products/raspberry-pi-3-model-b/)
+- [Adafruit 2.8" PiTFT Capacitive Touch Screen](https://learn.adafruit.com/adafruit-2-8-pitft-capacitive-touch/overview). Note, this project doesn't actually the touch functionality, so a non-touch screen would work too.
+- [PiTFT Plus Pibow Case](https://www.buyapi.ca/product/pibow-pitft/). I modified mine a bit by adding a bracket to the back of the case so that I could mount it to the stem of my bike.
+- (2) Bluetooth Cycling Speed and Cadence Sensors. I bought mine on eBay from a sell in China. The protocol is standardized, so any Bluetooth CSC sensor should theoretically work.
+- A power supply and a USB cable
+
 
 # Installation and Setup
 ## Basic Setup
@@ -228,7 +234,11 @@ source trainerpi/start-trainerpi.sh
 ```
 
 # Contributing
-TODO: Write this section
+This project is licensed under the MIT license. Do with it as you please.
+
+If you find a bug, feel free to create [an issue](https://github.com/kloppen/trainerpi/issues).
+And if you want to contribute a feature, feel free to discuss it in an issue
+and submit a Pull Request.
 
 
 # References
@@ -239,3 +249,4 @@ TODO: Write this section
 - https://www.bluetooth.com/specifications/gatt/viewer?attributeXmlFile=org.bluetooth.service.cycling_speed_and_cadence.xml
 - http://www.powercurvesensor.com/cycling-trainer-power-curves/
 - https://scribles.net/auto-power-on-bluetooth-adapter-on-boot-up/
+
