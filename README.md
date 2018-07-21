@@ -212,6 +212,20 @@ source trainerpi-ve/bin/activate
 pip install -r requirements.txt
 ```
 
+# Configuring the Code
+There are a number of variables that you'll need to set, such as the addresses
+of your CSC sensors. These are all defined towards to the top of `trainerpi.py`
+
+# Launch On Boot
+So that you don't have to connect a keyboard to the Pi, you'll probably want
+trainerpi to start on boot. There are a number of ways to do this. The way
+that I've chosen to do so is to call the script `start-trainerpi.sh` from my
+`.bashrc` file. You can do so by adding the following to the end of the
+`.bashrc` file for the default user on your Pi.
+
+```bash
+source trainerpi/start-trainerpi.sh
+```
 
 # Contributing
 TODO: Write this section
