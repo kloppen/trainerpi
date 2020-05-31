@@ -215,7 +215,7 @@ sudo pip3 install virtualenv
 cd ~/trainerpi
 virtualenv -p python3 trainerpi-ve
 source trainerpi-ve/bin/activate
-pip install -r requirements.txt
+pip3 install -r requirements.txt
 ```
 
 # Configuring the Code
